@@ -74,7 +74,7 @@ h3{margin:2px 0 16px;font:600 20px/1.4 var(--fd)}
 .demo{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:8px 0;padding:6px 6px 6px 12px;border-radius:13px;font-size:13px;line-height:1.5;background:color-mix(in srgb,var(--warn) 8%,transparent);border:1px solid color-mix(in srgb,var(--warn) 26%,transparent)}
 .demo button{font:600 12.5px/1.2 var(--fb)!important;white-space:nowrap;padding:7px 11px!important;border-radius:9px!important}
 .card .two{display:grid;grid-template-columns:1fr 1fr;gap:16px}.card .two>div:first-child{border-left:1px solid var(--line);padding-left:14px;margin-bottom:0!important}.card .two .num{font-size:clamp(20px,6vw,28px)!important}.card .two .mut{font-size:12.5px}
-.fab{transition:transform .25s,opacity .25s!important}body[data-tab=home]:not(.scrolled) .fab{opacity:0;transform:scale(.6);pointer-events:none}
+.fab{transition:transform .25s,opacity .25s!important}body[data-tab=ai] .fab{display:none}body[data-tab=home]:not(.scrolled) .fab{opacity:0;transform:scale(.6);pointer-events:none}
 .two:has(>select){display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .notes{margin:14px 0 4px}.notes:empty{display:none}
 
@@ -189,6 +189,23 @@ header{margin:0 -32px 8px;padding:18px 32px 14px}
 .bars{display:flex;align-items:flex-end;gap:8px;height:130px}.bars div{flex:1;text-align:center;font-size:11px;color:var(--mut);height:100%;display:flex;flex-direction:column;justify-content:flex-end;gap:5px}
 .bars i{display:block;width:100%;height:0;border-radius:8px 8px 3px 3px;background:linear-gradient(var(--ac),var(--ac2));transition:height 1s cubic-bezier(.2,.8,.2,1)}
 .svgc{width:100%;height:auto;display:block}.dn circle{fill:none;stroke-width:16;transition:stroke-dasharray 1.2s ease}
+.vwrap{display:flex;flex-direction:column;align-items:center;gap:12px;padding:10px 0 16px}
+.vmic{position:relative;width:78px;height:78px;border-radius:50%;border:0;display:grid;place-items:center;color:var(--ink);background:linear-gradient(180deg,var(--ac),var(--ac2));box-shadow:0 16px 30px -14px rgba(0,0,0,.7);cursor:pointer}
+.vmic svg{width:32px;height:32px}
+.vmic.on::before,.vmic.on::after,#ai_mic.on::before{content:"";position:absolute;inset:-8px;border-radius:50%;border:2px solid var(--ac);animation:ring 1.4s ease-out infinite}
+.vmic.on::after{animation-delay:.7s}
+@keyframes ring{from{transform:scale(.85);opacity:.9}to{transform:scale(1.35);opacity:0}}
+#ai_mic.on{color:var(--ac)}#ai_mic.on::before{inset:-3px;border-radius:14px}
+.rpick{display:grid;grid-template-columns:1fr 1fr;gap:8px}.rpick label{position:relative;text-align:center;cursor:pointer;overflow:hidden}
+.rpick input{position:absolute;inset:0;opacity:0;width:100%;height:100%;margin:0;padding:0;cursor:pointer}
+.aihd{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.aibadge{font:500 12px/1 var(--fb);padding:7px 10px;border-radius:999px;background:var(--acsoft);color:var(--ac);white-space:nowrap}
+.aibadge[data-m=local]{background:var(--g);color:var(--mut);border:1px solid var(--gb)}
+.chatbox{padding:12px}.chatbox .chat{min-height:300px;max-height:56vh}
+.composer{display:flex;gap:8px;align-items:center;margin-top:10px}.composer input{margin:0;flex:1}.composer .btn{flex:none}
+.m.typing{display:flex;gap:4px;padding:14px}.m.typing i{width:7px;height:7px;border-radius:50%;background:var(--mut);animation:blink 1.1s infinite}.m.typing i:nth-child(2){animation-delay:.18s}.m.typing i:nth-child(3){animation-delay:.36s}
+@keyframes blink{0%,80%,100%{opacity:.25;transform:translateY(0)}40%{opacity:1;transform:translateY(-3px)}}
+details summary{font:600 14px/1.4 var(--fb)}
 .sug{cursor:pointer}.sug .d{max-height:0;overflow:hidden;transition:max-height .4s;color:var(--mut);font-size:14px}.sug.on .d{max-height:160px;margin-top:8px}
 .badge{padding:16px 10px;text-align:center;font-size:12.5px;line-height:1.5;border-radius:var(--rs)}.badge b{display:block;font-size:26px;margin-bottom:6px}.badge.lock{opacity:.32;filter:grayscale(1)}
 .heat{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;text-align:center}.heat small{color:var(--mut);font-size:10px;display:block}
@@ -296,7 +313,7 @@ function form(title,fields,cb){open(`<h3>${title}</h3>`+fields.map(f=>`<label cl
 $('#fs').onclick=()=>{const v={};fields.forEach(f=>v[f.k]=$('#f_'+f.k).value);cb(v);close()}}
 function lastSim(c){const L=S.tx.filter(t=>t.type=='exp'&&!t.parts&&t.category==c).sort((a,b2)=>b2.date.localeCompare(a.date));return L[0]||null}
 function memText(c){const t=lastSim(c);if(!t)return'';const k=Math.round((now-new Date(t.date+'T00:00:00'))/864e5);return`آخر مرة دفعت لـ${cat(c)[2]} كانت ${k<=0?'اليوم':k==1?'قبل يوم':'قبل '+k+' أيام'} بمبلغ ${fmt(t.amount)}`}
-function addTx(type,pre){let c=(pre&&pre.category)||(type=='exp'?'food':INC[0]),p=PAY[0],mc='',split=false,parts=[{c:'food',a:''}],initA=pre&&pre.amount?String(pre.amount):'',initN=(pre&&pre.note)||'',tdir='out';const d=now.toISOString().slice(0,10);
+function addTx(type,pre){let c=(pre&&pre.category)||(type=='exp'?'food':INC[0]),p=(pre&&PAY.includes(pre.pay)&&pre.pay)||PAY[0],mc='',split=false,parts=[{c:'food',a:''}],initA=pre&&pre.amount?String(pre.amount):'',initN=(pre&&pre.note)||'',tdir='out';const d=(pre&&/^\d{4}-\d{2}-\d{2}$/.test(pre.date||'')&&pre.date)||now.toISOString().slice(0,10);
 const draw=()=>{open(`<div class="tabs"><button class="chip ${type=='exp'?'on':''}" data-t="exp">💸 مصروف</button><button class="chip ${type=='inc'?'on':''}" data-t="inc">💰 دخل</button><button class="chip ${type=='transfer'?'on':''}" data-t="transfer">🔄 تحويل</button><button class="chip" id="rcptBtn">📸 فاتورة</button></div>
 <label class="mut">المبلغ</label><input class="amt" id="a" type="number" step="0.01" inputmode="decimal" placeholder="25.50" value="${$('#a')&&type!='transfer'?$('#a').value:initA}">
 ${type=='transfer'?`<label class="mut">نوع التحويل</label><div class="tabs"><button class="chip ${tdir=='out'?'on':''}" data-td="out">🔻 مصروف (تحويل خارج)</button><button class="chip ${tdir=='in'?'on':''}" data-td="in">🔺 دخل (تحويل داخل)</button></div><label class="mut">${tdir=='out'?'إلى (اختياري)':'من (اختياري)'}</label><input id="tto" placeholder="اسم الشخص">${tdir=='out'?`<label class="mut">دمج ضمن فئة مصروف (اختياري)</label><div class="chips" id="cc"><button class="chip ${!mc?'on':''}" data-c="">بدون دمج</button>${CATS.map(x=>`<button class="chip ${x[0]==mc?'on':''}" data-c="${x[0]}">${x[1]} ${x[2]}</button>`).join('')}</div>`:''}<label class="mut">السبب (اختياري)</label><input id="n" placeholder="سبب التحويل">`:
@@ -454,20 +471,8 @@ if(sub=='subs')return`<h1>🔄 اشتراكاتي</h1>${T}<p>تدفع حاليً
 return`<div class="glass card"><div class="row" style="margin:0"><div class="grow" data-sinfo="${i}" style="cursor:pointer"><b>${esc(s.n)} <span class="mut" style="font-size:12px">ℹ️</span></b><div class="mut">${pz?"⏸️ موقوف "+(s.ps=="open"?"حتى تستأنفه":"حتى "+s.ps):"الخصم القادم: "+n} · ${s.cy}</div></div><b>${fmt(s.p)}</b><button class="ib" data-sp2="${i}" aria-label="إيقاف أو استئناف" style="width:36px;height:36px">${pz?"▶️":"⏸️"}</button><button class="ib" data-sd="${i}" style="width:36px;height:36px">🗑️</button></div>${!pz?(st===true?'<div class="pos" style="margin-top:8px">✅ دفعت هذا الشهر</div>':st===false?'<div class="row" style="margin-top:8px"><span class="mut grow">⏭️ ما دفعتها هذا الشهر</span><button class="chip" data-subpay="'+i+'">دفعتها الآن</button></div>':'<div class="row" style="margin-top:8px;gap:8px"><button class="btn s" data-subpay="'+i+'" style="flex:1;padding:8px">✅ دفعت الاشتراك</button><button class="btn s" data-subskip="'+i+'" style="flex:1;padding:8px">❌ ما دفعت</button></div>'):''}<div class="row" style="margin-top:8px;gap:6px;justify-content:flex-end"><button class="ib" data-smu="${i}" ${i==0?'disabled style="opacity:.25"':''} aria-label="أعلى" style="width:32px;height:32px">▲</button><button class="ib" data-smd="${i}" ${i==S.subs.length-1?'disabled style="opacity:.25"':''} aria-label="أسفل" style="width:32px;height:32px">▼</button></div></div>`}).join('')}`;
 if(sub=='inst'){const today1=lf(new Date());return`<h1>💳 أقساطي</h1>${T}<button class="btn" id="ni">+ قسط جديد</button><div style="height:12px"></div>${S.installments.length?S.installments.map((x,i)=>{const rem=Math.max(0,x.months-x.paid),cmp=x.paid>=x.months,due=cmp?null:nextDue(x),isDue=due&&today1>=due;
 return`<div class="glass card"><div class="row" style="margin:0">${ring(x.paid/x.months).replace('class="ring"','class="ring" style="width:76px;height:76px"')}<div class="grow"><b>${esc(x.name)}</b><div class="mut">${fmt(x.amount)} شهريًا · ${x.paid} من ${x.months} دفعات</div>${x.reason?`<div class="mut">💭 ${esc(x.reason)}</div>`:''}${cmp?`<div class="pos" style="font-weight:700;margin-top:4px">✅ تم الإنجاز! ${encPhrase()}</div>`:`<div>باقي <b>${rem}</b> دفعات</div>`}</div></div>${!cmp?(isDue?'<button class="btn" data-instpay="'+i+'" style="width:100%;margin-top:8px">✅ تم دفعت قسط هذا الشهر</button>':'<div class="mut" style="margin-top:8px">📅 الدفعة القادمة: '+due+'</div>'):''}<div class="row" style="margin-top:8px;gap:6px;justify-content:flex-end"><button class="ib" data-ide="${i}" aria-label="تعديل" style="width:32px;height:32px">✏️</button><button class="ib" data-idd="${i}" aria-label="حذف" style="width:32px;height:32px">🗑️</button><button class="ib" data-imu="${i}" ${i==0?'disabled style="opacity:.25"':''} aria-label="أعلى" style="width:32px;height:32px">▲</button><button class="ib" data-imd="${i}" ${i==S.installments.length-1?'disabled style="opacity:.25"':''} aria-label="أسفل" style="width:32px;height:32px">▼</button></div></div>`}).join(''):empty()}`}},
-ai(){return`<h1>🤖 فلوسي AI</h1><p class="mut">اسألني عن فلوسك أو أي موضوع ثاني. عند السؤال يُرسل ملخص أرقامك فقط (بدون ملاحظاتك).</p><div class="glass card"><div class="chat" id="chat"><div class="m a">هلا! أنا فلوسي AI. اسألني: وين أكثر شيء صرفت عليه؟</div></div></div>
-<div class="chips">${['وين راحت فلوسي؟','هل مصروفي هذا الشهر طبيعي؟','كم صرفت على المطاعم؟','إذا استمريت بهذا المعدل كم بصرف نهاية الشهر؟','أبي أوفر 1000 ريال','وش المصاريف اللي أقدر أقللها؟','ساعدني أسوي ميزانية','كم أقدر أصرف اليوم؟'].map(q=>`<button class="chip" data-q="${q}">${q}</button>`).join('')}</div><div style="display:flex;gap:8px"><input id="ai_q" placeholder="اكتب سؤالك..." style="margin:0"><button class="btn" id="ai_go">إرسال</button></div>`}};
+ai(){return aiView()}};
 const empty=()=>`<div class="empty"><p>ما عندك مصاريف مسجلة حتى الآن 👀</p><button class="btn" data-add="exp">+ أضف أول مصروف</button></div>`;
-function reply(q){const e=sum(exps()),b=byCat(),i=inc(),c=CATS.find(c=>q.includes(c[2])||(c[0]=='food'&&q.includes('مطعم')));
-if(!e)return'ما عندك مصاريف مسجلة بعد. أضف أول مصروف وأحلله لك.';
-if(/كم أقدر|اليوم/.test(q))return`تقدر تصرف اليوم بأمان حوالي ${fmt(safe())} مع الحفاظ على ادخار ${sv()}% من دخلك.`;
-if(/نهاية|المعدل|استمر/.test(q))return`بمعدلك الحالي (${fmt(e/today)} يوميًا) ستصرف حوالي ${fmt(e/today*dim)} بنهاية الشهر.`;
-if(/أوفر|وفر/.test(q)){const g=+(q.match(/\d+/)||[1000])[0],cut=b.filter(x=>['food','fun','shop','subs'].includes(x[0])),s=cut.reduce((a,x)=>a+x[1]*.25,0);return`لتوفير ${fmt(g)} ينقصك تخفيض تقريبًا. لو خفضت المطاعم والترفيه والتسوق والاشتراكات 25% توفر ${fmt(s)}، والباقي ${fmt(Math.max(0,g-s))} يحتاج مراجعة بقية المصاريف.`}
-if(/طبيعي/.test(q)){const pv=sum(S.tx.filter(t=>t.type=='exp'&&t.date.startsWith(pd))),ex=e/today*dim;return`متوقع أن تصرف ${fmt(ex)} هذا الشهر مقابل ${fmt(pv)} الشهر الماضي، ونسبة الإنفاق ${i?Math.round(e/i*100):0}% من دخلك. ${e/i<.5?'وضعك مريح.':'راقب التصنيفات الكبيرة.'}`}
-if(/ميزانية/.test(q))return`اقتراح بسيط بدخلك ${fmt(i)}: ${fmt(i*.5)} للأساسيات، ${fmt(i*.3)} للرغبات، و${fmt(i*.2)} للادخار. تقدر تضبطها من صفحة أهدافي ← ميزانيتي.`;
-if(/أقلل|قلل|تقليل/.test(q))return b.slice(0,3).map(x=>`${cat(x[0])[2]}: خفض 15% يوفر ${fmt(x[1]*.15)}`).join('، ')+'.';
-if(c)return`صرفت على ${c[2]} ${fmt(byCat().find(x=>x[0]==c[0])?.[1]||0)} هذا الشهر.`;
-return`من أصل ${fmt(e)} صرفتها هذا الشهر، أكبر جزء راح إلى ${cat(b[0][0])[2]} بمبلغ ${fmt(b[0][1])}، أي حوالي ${Math.round(b[0][1]/e*100)}% من مصروفاتك.`}
-function ask(q){if(!q.trim())return;const c=$('#chat');c.insertAdjacentHTML('beforeend',`<div class="m u"></div>`);c.lastChild.textContent=q;c.scrollTop=1e5;setTimeout(()=>{c.insertAdjacentHTML('beforeend','<div class="m a"></div>');c.lastChild.textContent=reply(q);c.scrollTop=1e5},450)}
 /* ===== v2 ===== */
 const payDay=()=>Math.min(28,Math.max(1,(S.p&&S.p.pd)||1));
 function sv(){return S&&S.p&&S.p.sv!=null?S.p.sv:20}
@@ -552,6 +557,7 @@ return`<div class="glass hero-p"><div class="av-big">${esc(A)}</div><b style="fo
 ${sec('👤 المعلومات الشخصية',row('👤','الاسم','',esc(p.name||'—'),'data-e="name"')+row(esc(A),'الصورة الشخصية','اختر أفاتارًا','','data-e="av"'))}
 ${sec('💰 الإعدادات المالية',row('💰','العملة','',esc(cur()),'data-e="cur"')+row('📅','بداية الشهر المالي','يوم '+payDay()+' من كل شهر ميلادي','','data-e="pd"')+row('💵','الدخل الشهري *','يُضاف تلقائيًا كل راتب',p.inc>0?fmt(+p.inc):'مطلوب — اضغط للتحديد','data-e="inc"')+row('🎯','نسبة الادخار المستهدفة','من دخلك',sv()+'%','data-e="sv"')+row('⚖️','قاعدة الميزانية','الأساسيات/الرغبات/الادخار',ruleP().join('/'),'data-e="rule"'))}
 ${sec('🎨 المظهر',sw('light',md=='light','☀️','الوضع النهاري')+sw('dark',md=='dark','🌙','الوضع الليلي')+sw('auto',md=='auto','📱','استخدام إعداد الجهاز')+`<div class="prow" style="cursor:default"><span class="ic2">🎨</span><div class="lb"><b>لون الواجهة</b><small>يُطبَّق على الفاتح والداكن</small></div></div><div class="chips" style="padding:0 6px 10px">${ACC.map((a,i)=>`<button class="cdot ${p.acc!='c'&&(p.acc||0)==i?'on':''}" data-ac="${i}" aria-label="لون ${i+1}" style="background:linear-gradient(135deg,${a[0]},${a[1]})"></button>`).join('')}<label class="cdot ${p.acc=='c'?'on':''}" style="display:grid;place-items:center;background:var(--gb);cursor:pointer;font-size:15px">🖌️<input type="color" id="c1" value="${hx(p.c1,'#d6b26e')}" style="position:absolute;opacity:0;width:36px;height:36px"></label></div>`+row('🖼️','خلفية التطبيق','',BGN[p.bg||0],'data-e="bg"')+row('🔤','حجم الخط','',['صغير','عادي','كبير','أكبر'][p.fs==null?1:p.fs],'data-e="fs"')+sw('hide',!!p.hide,'🙈','إخفاء المبالغ'))}
+${sec('🤖 الذكاء الاصطناعي',row('🤖','ربط الذكاء الاصطناعي','داخل Claude أو عبر خادمك الخاص','','data-e="ai"'))}
 ${sec('📦 بياناتي',row('📄','تصدير CSV','',''.trim(),'data-e="csv"')+row('📑','تقرير شهري','PDF',''.trim(),'data-e="rep"')+row('📥','استيراد كشف حساب','',''.trim(),'data-e="imp"')+row('🧪','استعادة البيانات التجريبية','',''.trim(),'data-e="demo"')+row('📁','أرشيف المستندات',(S.docs||[]).length+' مستند','','data-e="docs"')+row('🗑️','سلة المحذوفات',(S.trash||[]).length+' عنصر','','data-e="trash"')+row('🚫','مسح كل بياناتي','',''.trim(),'data-e="wipe"'))}
 <div class="about stg">عن صُرة<br>الإصدار 1.0.0<br><a href="#" data-e="terms">شروط الاستخدام</a> · <a href="#" data-e="priv">سياسة الخصوصية</a></div>`};
 function stagger(){document.querySelectorAll('.stg').forEach((e,i)=>{e.style.animationDelay=(i*70)+'ms'})}
@@ -582,6 +588,7 @@ if(k=='csv'){exportCSV();return}
 if(k=='rep'){exportReport();return}
 if(k=='imp'){importUI();return}
 if(k=='demo'){const pp=S.p;S=demo();S.p=pp;save();toast('🧪 عادت البيانات التجريبية');rp();return}
+if(k=='ai'){aiSettings();return}
 if(k=='docs'){docsUI();return}
 if(k=='trash'){trashUI();return}
 if(k=='wipe'){conf('🗑️ مسح البيانات نهائي','بيانات مصاريفك وأهدافك واشتراكاتك بتُحذف من هذا الجهاز ولا ترجع. الإعدادات (الاسم، الألوان، العملة) تبقى كما هي. متأكد؟',()=>{const pp=S.p;S={demo:0,nid:1,tx:[],budgets:{},goals:[],subs:[],p:pp};save();toast('تم مسح بياناتك');rp()},'نعم، امسحها','لا، تراجع');return}
@@ -638,23 +645,7 @@ const i=inc(),avgE=today?sum(exps())/today*30:sum(exps()),lm=Math.max(0,i-avgE),
 open(`<h3>🧠 ${esc(nm)}</h3><p class="mut">افتراضًا على دخلك الشهري ${fmt(i)} ومتوسط مصروفك ${fmt(avgE)}، فائضك الشهري المتوقع ${fmt(lm)}.</p>
 <div class="glass card"><b>لو اشتريت الآن</b><div class="mut" style="margin:4px 0">تدفع ${fmt(cost)} فورًا</div><div>الرصيد المتوقع بعد ${mo} أشهر: <b class="${now2>=0?'pos':'neg'}">${fmt(now2)}</b></div></div>
 <div class="glass card" style="margin-top:10px"><b>لو انتظرت ${mo} أشهر</b><div class="mut" style="margin:4px 0">تجمع فائضك أولًا</div><div>رصيدك المتوقع: <b class="pos">${fmt(wait2)}</b>، وبعد الشراء يبقى معك <b>${fmt(wait2-cost)}</b></div></div>
-<p class="mut" style="margin-top:10px">تقدير مبني على معدل دخلك وصرفك الحالي، وقد يتغير حسب ظروفك الفعلية.</p>`)}}
-/* voice add */
-let REC=null;
-function voiceAdd(){let sr=window.SpeechRecognition||window.webkitSpeechRecognition;
-open('<h3>🎙️ أضف بالصوت</h3><p class="mut">مثال: «أضف 35 ريال مطعم» أو «دفعت 120 بنزين»</p><div style="text-align:center;padding:20px 0"><button id="vmic" class="fab" style="position:static;animation:none;width:74px;height:74px;font-size:34px">🎙️</button><div id="vst" class="mut" style="margin-top:14px">اضغط وابدأ الكلام</div></div>');
-if(!sr){$('#vst').textContent='المتصفح لا يدعم الإدخال الصوتي، جرّب من كروم على الجوال أو الكمبيوتر';$('#vmic').style.opacity=.4;return}
-$('#vmic').onclick=()=>{try{REC=new sr()}catch(e){$('#vst').textContent='تعذر تشغيل الميكروفون';return}
-REC.lang='ar-SA';REC.interimResults=false;$('#vst').innerHTML='🔴 أستمع... تكلم الآن';$('#vmic').style.animation='fl2 .6s ease-in-out infinite alternate';
-REC.onresult=e=>{const t=e.results[0][0].transcript;$('#vst').textContent='🧠 جارٍ التحليل: «'+t+'»';setTimeout(()=>voiceParse(t),400)};
-REC.onerror=()=>{$('#vst').textContent='ما قدرت أسمعك، جرّب مرة ثانية';$('#vmic').style.animation='none'};
-REC.onend=()=>{$('#vmic').style.animation='none'};
-try{REC.start()}catch(e){}}}
-function voiceParse(t){const KW=[['food',/مطعم|مطاعم|قهوة|كافي|فطور|غدا|عشا|برجر|بيتزا|شاورما/],['fuel',/بنزين|وقود|ديزل/],['groc',/بقاله|بقالة|مقاضي|سوبرماركت|تموين/],['fun',/ترفيه|سينما|لعبه|لعبة|العاب/],['shop',/تسوق|ملابس|شراء/],['subs',/اشتراك|نتفلكس|سبوتيفاي/],['home',/منزل|بيت|فاتورة كهرباء|ماء/],['tech',/تقنيه|تقنية|جوال|لابتوب/],['edu',/تعليم|دوره|دورة|كتاب/],['trip',/سفر|طيران|فندق/],['health',/صحه|صحة|دواء|صيدليه|صيدلية/]],
-m=t.match(/\d+(\.\d+)?/),amt=m?parseFloat(m[0]):null,isInc=/دخل|استلمت|راتب|قبضت/.test(t),f=KW.find(k=>k[1].test(t)),c=f?f[0]:'other';
-if(!amt){open('<h3>🎙️ لم أفهم المبلغ</h3><p class="mut">جرّب تقول المبلغ بوضوح، مثل: «أضف 35 ريال مطعم».</p><button class="btn" id="vtry" style="width:100%">حاول مرة ثانية</button>');$('#vtry').onclick=voiceAdd;return}
-close();addTx(isInc?'inc':'exp',{amount:amt,category:isInc?INC[0]:c,note:t});
-if(!isInc&&!f)setTimeout(()=>toast('لم أتعرف على التصنيف بدقة، اخترت لك «أخرى» — عدّله إن أحببت'),500)}
+<p class="mut" style="margin-top:10px">تقدير مبني على معدل دخلك وصرفك الحالي، وقد يتغير حسب ظروفك الفعلية.</p><button class="btn s" id="dai" style="width:100%;margin-top:10px">حلّل القرار بالذكاء الاصطناعي</button>`);$('#dai').onclick=()=>{close();tab='ai';render();scrollTo({top:0});setTimeout(()=>ask(`ساعدني أقرر: ${nm} بتكلفة ${cost} ${cur()}. قارن بين الشراء الآن والانتظار ${mo} أشهر بناءً على بياناتي وأقساطي وأهدافي، وأعطني توصية واضحة مع الأرقام.`),80)}}}
 /* customizable dashboard widgets */
 function wStats(){const i=inc(),e=sum(exps()),r=i-e;return`<div class="grid c4"><div class="glass mini"><span class="mut">💰 الدخل</span><b data-n="${i}"></b></div><div class="glass mini"><span class="mut">💸 المصروفات</span><b data-n="${e}"></b></div><div class="glass mini"><span class="mut">📈 الادخار</span><b data-n="${r}"></b></div><div class="glass mini"><span class="mut">📊 نسبة الإنفاق</span><b data-n="${i?e/i*100:0}" data-f="p"></b></div></div>`}
 function wBreak(){const e=sum(exps()),b=byCat();return`<h2>وين راحت فلوسي؟</h2><div class="glass card">${e?`<p>هذا الشهر صرفت <b>${fmt(e)}</b>.</p>`+b.slice(0,5).map(x=>`<div class="row"><span style="font-size:24px">${cat(x[0])[1]}</span><div class="grow"><div style="display:flex;justify-content:space-between"><span>${cat(x[0])[2]}</span><span>${fmt(x[1])} — ${Math.round(x[1]/e*100)}%</span></div><div class="bar"><i data-w="${x[1]/e*100}"></i></div></div></div>`).join('')+`<p class="mut">${insight()}</p>`:empty()}</div>`}
@@ -668,22 +659,6 @@ function bindCuz(){document.querySelectorAll('[data-mu]').forEach(b=>b.onclick=(
 document.querySelectorAll('[data-md]').forEach(b=>b.onclick=()=>{const L=widLayout(),i=+b.dataset.md;if(i<L.length-1){[L[i+1],L[i]]=[L[i],L[i+1]];setP({wids:L});$('#cuz').innerHTML=cuzRows(L);bindCuz();render()}});
 document.querySelectorAll('[data-sw2]').forEach(b=>b.onclick=()=>{const L=widLayout(),i=+b.dataset.sw2;L[i].on=!L[i].on;setP({wids:L});$('#cuz').innerHTML=cuzRows(L);bindCuz();render()})}
 function customizeUI(){const L=widLayout();open(`<h3>🧩 تخصيص الرئيسية</h3><p class="mut">فعّل أو أخفِ البطاقات، ورتّبها بالأسهم.</p><div id="cuz">${cuzRows(L)}</div>`);bindCuz()}
-/* receipt photo -> expense (OCR via AI vision) */
-async function receiptAdd(){let sm=null;try{sm=await claude.use('sample')}catch(e){}
-if(!sm){open('<h3>📸 تصوير فاتورة</h3><p class="mut">هذه الميزة تحتاج اتصالًا بالذكاء الاصطناعي غير متاح حاليًا في هذا العرض.</p>');return}
-let lim=null;try{lim=await sm.limits()}catch(e){}
-if(!lim||!lim.images){open('<h3>📸 تصوير فاتورة</h3><p class="mut">هذا العرض لا يدعم تحليل الصور حاليًا.</p>');return}
-open(`<h3>📸 تصوير فاتورة</h3><p class="mut">التقط أو ارفع صورة فاتورة واضحة.</p><input id="rfile" type="file" accept="${lim.images.mediaTypes.join(',')}" capture="environment" style="padding:8px 0"><div id="rprev"></div><button class="btn" id="rgo" style="width:100%" disabled>🧠 استخراج البيانات</button>`);
-const fi=$('#rfile'),go=$('#rgo');
-fi.onchange=()=>{if(fi.files[0]){go.disabled=false;$('#rprev').innerHTML=`<img src="${URL.createObjectURL(fi.files[0])}" style="width:100%;border-radius:14px;margin:10px 0">`}};
-go.onclick=async()=>{go.disabled=true;go.textContent='🧠 جارٍ تحليل الفاتورة...';const cl=CATS.map(x=>x[0]+':'+x[2]).join('، ');
-try{const data=await sm.json('هذه صورة فاتورة شراء. استخرج منها: اسم المتجر (store)، المبلغ الإجمالي كرقم فقط بدون رمز عملة (amount)، تاريخ الفاتورة بصيغة YYYY-MM-DD إن ظهر وإلا اتركه فارغًا (date)، وأقرب تصنيف من هذه القائمة بالضبط (category): '+cl+'. أعد فقط JSON بالشكل التالي بدون أي نص آخر: {"store":"","amount":0,"date":"","category":""}',{images:fi.files[0],modelTier:'quick',cache:false});
-receiptPreview(data)}catch(e){open('<h3>📸 تعذر التحليل</h3><p class="mut">'+(e.code=='not_granted'?'ما تم منح إذن استخدام الذكاء الاصطناعي.':e.code=='image_rejected'?'الصورة غير مقروءة، جرّب صورة أوضح.':'تعذر تحليل الفاتورة الآن.')+'</p><button class="btn" id="rretry" style="width:100%">حاول مرة ثانية</button>');$('#rretry').onclick=receiptAdd}}}
-function receiptPreview(data){data=data||{};const cc=CATS.some(x=>x[0]==data.category)?data.category:'other',amt=parseFloat(data.amount)||'',dt=/^\d{4}-\d{2}-\d{2}$/.test(data.date)?data.date:now.toISOString().slice(0,10),store=String(data.store||'').slice(0,40);let rc=cc;
-open(`<h3>📸 راجع البيانات قبل الحفظ</h3><label class="mut">المتجر</label><input id="rst" value="${esc(store)}"><label class="mut">المبلغ</label><input id="ram" type="number" step="0.01" value="${amt}"><label class="mut">التصنيف المقترح</label><div class="chips" id="rcc">${CATS.map(x=>`<button class="chip ${x[0]==rc?'on':''}" data-rc="${x[0]}">${x[1]} ${x[2]}</button>`).join('')}</div><label class="mut">التاريخ</label><input id="rdt" type="date" value="${dt}"><button class="btn" id="rsave" style="width:100%">حفظ المصروف</button>`);
-document.querySelectorAll('[data-rc]').forEach(b=>b.onclick=()=>{rc=b.dataset.rc;document.querySelectorAll('[data-rc]').forEach(x=>x.classList.toggle('on',x==b))});
-$('#rsave').onclick=()=>{const a=parseFloat($('#ram').value);if(!(a>0)){$('#ram').style.borderColor='var(--bad)';return}
-S.tx.push({id:S.nid++,type:'exp',amount:a,category:rc,pay:PAY[0],date:$('#rdt').value||dt,note:$('#rst').value});save();close();toast('✓ تمت إضافة المصروف من الفاتورة');render()}}
 /* subscription detail */
 function subDetail(i){const s=S.subs[i];if(!s)return;const h=(s.hist||[]).slice().reverse();
 open(`<h3>${esc(s.n)}</h3><p class="mut">${fmt(s.p)} · ${s.cy}</p><div class="glass card"><div class="row"><span class="grow">📅 بدأ الاشتراك</span><b>${s.start||'غير معروف'}</b></div><div class="row"><span class="grow">الحالة الآن</span><b>${paused(s)?'⏸️ موقوف':'✅ نشط'}</b></div></div>
@@ -699,17 +674,252 @@ S.installments.push({id:S.nid++,name:nm.slice(0,40),amount:a,months:mo,paid:0,fi
 function instEditUI(i){const x=S.installments[i];open(`<h3>تعديل القسط</h3><label class="mut">الاسم</label><input id="ien" value="${esc(x.name)}"><label class="mut">المبلغ الشهري</label><input id="iea" type="number" value="${x.amount}"><label class="mut">عدد الدفعات</label><input id="iem" type="number" value="${x.months}"><label class="mut">الدفعات المسدّدة</label><input id="iep" type="number" value="${x.paid}"><label class="mut">تاريخ أول دفعة</label><input id="ifd2" type="date" value="${x.firstDate||now.toISOString().slice(0,10)}"><button class="btn" id="iesv" style="width:100%">حفظ</button>`);
 $('#iesv').onclick=()=>{if($('#ien').value.trim())x.name=$('#ien').value.trim().slice(0,40);if(+$('#iea').value>0)x.amount=+$('#iea').value;if(+$('#iem').value>0)x.months=+$('#iem').value;if(+$('#iep').value>=0)x.paid=+$('#iep').value;if($('#ifd2').value)x.firstDate=$('#ifd2').value;save();close();toast('✓ تم التعديل');render()}}
 
-let CH=[];
-const AI_SYS='أنت «فلوسي AI»، مساعد ذكي داخل تطبيق «وين فلوسي؟» لإدارة المصاريف. رد بالعربية وبلهجة خليجية بسيطة ودودة وواضحة. افهم قصد المستخدم من كل رسالة، وأجب عن أي موضوع مهما كان (مالي أو غيره) بإجابة مفيدة وصحيحة. إذا كان السؤال عن أمواله فاعتمد على بيانات JSON المرفقة بدقة ولا تخترع أرقامًا، ونبّه إن كانت البيانات تجريبية. لا تلُم المستخدم ولا تخوّفه أبدًا. اجعل الرد مختصرًا في فقرات قصيرة بدون تنسيق markdown ثقيل، وإذا كان الطلب غامضًا فاسأل سؤالًا واحدًا فقط. في المواضيع الطبية أو القانونية أو الاستثمارية الكبيرة أعطِ معلومة عامة ونبّه أنك لست مختصًا.';
-function aiCtx(){const b=byCat(),bm=Object.fromEntries(b);return JSON.stringify({currency:cur(),today:lf(now),daysLeftInMonth:dLeft,paydayInDays:nextPayIn(),incomeThisMonth:inc(),spentThisMonth:sum(exps()),spentLastMonth:sum(S.tx.filter(t=>t.type=='exp'&&t.date.startsWith(pd))),byCategory:b.map(x=>({category:cat(x[0])[2],amount:x[1]})),budgets:Object.entries(S.budgets).map(([k,l])=>({category:cat(k)[2],limit:l,spent:bm[k]||0})),goals:S.goals.map(g=>({name:g.n,target:g.t,saved:g.c})),subscriptions:S.subs.map(x=>({name:x.n,price:x.p,cycle:x.cy,paused:paused(x)})),recentTransactions:S.tx.slice().sort((a,c)=>c.date.localeCompare(a.date)).slice(0,15).map(t=>({date:t.date,type:t.type,amount:t.amount,category:t.type=='exp'?cat(t.category)[2]:t.category})),isDemoData:!!S.demo})}
-async function ask(q){q=(q||'').trim();if(!q)return;const c=$('#chat');c.insertAdjacentHTML('beforeend','<div class="m u"></div><div class="m a">…</div>');c.children[c.children.length-2].textContent=q;const el=c.lastChild;c.scrollTop=1e5;
-let sm=null;try{sm=await claude.use('sample')}catch(e){}
-if(!sm){el.textContent=reply(q);return}
-CH.push({role:'user',content:q});let h=CH.slice(-7);while(h.length&&h[0].role!='user')h.shift();
-h=h.map((x,i)=>i==0?{role:x.role,content:AI_SYS+'\n\nبيانات المستخدم (JSON):\n'+aiCtx()+'\n\nرسالة المستخدم:\n'+x.content}:x);
-try{const r=await sm(h,{cache:false,onText:({text})=>{el.textContent=text;c.scrollTop=1e5}});el.textContent=r.text;CH.push({role:'assistant',content:r.text})}
-catch(e){CH.pop();el.textContent=(e&&e.code=='not_granted'?'ما فعّلت الذكاء الاصطناعي، فأجاوبك بالأرقام المحلية:\n':'تعذر الاتصال بالذكاء الاصطناعي الآن، هذه إجابة من أرقامك:\n')+reply(q)}
-c.scrollTop=1e5}
+/* ===== AI engine: Claude viewer → your own server → on-device ===== */
+const AIX={mode:'',sm:null,img:false,url:''};
+const AI_LABEL={claude:'متصل بـ Claude',server:'متصل بخادمك',local:'تحليل محلي على جهازك'};
+const r2=n=>Math.round((+n||0)*100)/100;
+function aiSrv(){const p=S.p||{};if(p.aiUrl)return String(p.aiUrl).trim().replace(/\/+$/,'');if(/^https?:$/.test(location.protocol)&&!/(claude\.ai|claudeusercontent\.com|claude\.site)$/.test(location.hostname))return location.origin;return''}
+function aiHdr(){const t=S.p&&S.p.aiTok;return Object.assign({'content-type':'application/json'},t?{'x-app-token':String(t)}:{})}
+async function aiInit(force){
+ if(AIX.mode&&!force)return AIX.mode;
+ AIX.mode='';AIX.sm=null;AIX.img=false;AIX.url='';
+ try{if(window.claude&&typeof claude.use=='function'){const sm=await Promise.race([claude.use('sample'),new Promise(r=>setTimeout(()=>r(null),6000))]);if(sm){AIX.sm=sm;try{const l=await sm.limits();AIX.img=!!(l&&l.images)}catch(e){}return AIX.mode='claude'}}}catch(e){}
+ const u=aiSrv();
+ if(u){try{const c=new AbortController(),tm=setTimeout(()=>c.abort(),6000);const r=await fetch(u+'/api/health',{signal:c.signal,headers:aiHdr()});clearTimeout(tm);if(r.ok){const j=await r.json();if(j&&j.ok){AIX.url=u;AIX.img=!!j.vision;return AIX.mode='server'}}}catch(e){}}
+ return AIX.mode='local'}
+async function aiText(turns,o={}){
+ const m=await aiInit();
+ if(m=='claude'){const r=await AIX.sm(turns,{cache:false,onText:o.onText,signal:o.signal,modelTier:o.tier||'default'});return r.text}
+ if(m=='server'){
+  const r=await fetch(AIX.url+'/api/chat',{method:'POST',headers:aiHdr(),body:JSON.stringify({messages:turns,tier:o.tier||'default'}),signal:o.signal});
+  if(!r.ok){let msg='';try{msg=(await r.json()).error}catch(e){}throw{code:r.status==401?'not_granted':r.status==429?'rate_limited':'server',message:msg||('HTTP '+r.status)}}
+  const rd=r.body.getReader(),dec=new TextDecoder();let t='';
+  for(;;){const{done,value}=await rd.read();if(done)break;t+=dec.decode(value,{stream:true});const k=t.indexOf('\u0000ERR:');if(k>=0)throw{code:'server',message:t.slice(k+5),text:t.slice(0,k)};o.onText&&o.onText({text:t})}
+  return t}
+ throw{code:'offline'}}
+function blobToDataURL(b){return new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result);r.onerror=rej;r.readAsDataURL(b)})}
+async function aiJSON(prompt,o={}){
+ const m=await aiInit();
+ if(m=='claude'){const opt={modelTier:o.tier||'quick',cache:false,signal:o.signal};if(o.image)opt.images=o.image;return AIX.sm.json(prompt,opt)}
+ if(m=='server'){let image=null;if(o.image){const du=await blobToDataURL(o.image);image={media_type:du.slice(5,du.indexOf(';')),data:du.slice(du.indexOf(',')+1)}}
+  const r=await fetch(AIX.url+'/api/json',{method:'POST',headers:aiHdr(),body:JSON.stringify({prompt,image,tier:o.tier||'quick'}),signal:o.signal});
+  const j=await r.json().catch(()=>({}));if(!r.ok||j.error)throw{code:r.status==401?'not_granted':'server',message:j.error||('HTTP '+r.status)};return j.data}
+ throw{code:'offline'}}
+
+/* ===== Arabic language helpers ===== */
+const AR_DIG=s=>String(s).replace(/[٠-٩]/g,d=>'٠١٢٣٤٥٦٧٨٩'.indexOf(d)).replace(/[۰-۹]/g,d=>'۰۱۲۳۴۵۶۷۸۹'.indexOf(d)).replace(/٫/g,'.').replace(/٬/g,',');
+const normA=s=>AR_DIG(s).replace(/[\u064B-\u0652\u0640]/g,'').replace(/[أإآ]/g,'ا').replace(/ة/g,'ه').replace(/ى/g,'ي').toLowerCase();
+const NW={صفر:0,واحد:1,وحده:1,واحده:1,اثنين:2,اثنان:2,ثنين:2,اثنتين:2,ثلاث:3,ثلاثه:3,تلات:3,تلاته:3,اربع:4,اربعه:4,خمس:5,خمسه:5,ست:6,سته:6,سبع:7,سبعه:7,ثمان:8,ثمانيه:8,ثماني:8,ثمنيه:8,تسع:9,تسعه:9,عشر:10,عشره:10,احدعشر:11,احدعش:11,حدعش:11,اثنعش:12,اثنعشر:12,اطنعش:12,ثلطعش:13,ثلاثطعش:13,اربعطعش:14,خمسطعش:15,ستطعش:16,سبعطعش:17,ثمنطعش:18,تسعطعش:19,عشرين:20,ثلاثين:30,تلاتين:30,اربعين:40,خمسين:50,ستين:60,سبعين:70,ثمانين:80,تسعين:90,ميه:100,مئه:100,مائه:100,ميتين:200,مئتين:200,مائتين:200,الف:1000,الفين:2000};
+function wordsNum(t){const toks=normA(t).split(/[\s,،.]+/);let total=0,cur=0,got=false,started=false;
+ const isN=y=>{if(NW[y]!=null||/^(نص|ربع|الاف)$/.test(y))return true;const q=y.match(/^(.*?)(ميه|مئه|مايه)$/);return!!q&&(q[1]==''||NW[q[1]]!=null)};
+ for(let w of toks){if(!w)continue;let x=w.replace(/ـ/g,'');if(!isN(x))for(const pre of ['و','ب','ل','وب','ف']){if(x.length>pre.length+1&&x.startsWith(pre)&&isN(x.slice(pre.length))){x=x.slice(pre.length);break}}
+  let m;
+  if(NW[x]!=null){const v=NW[x];if(v==1000||v==2000){total+=(v==2000?2000:(cur||1)*1000);cur=0}else if(v==100){cur=(cur||1)*100}else cur+=v;got=started=true;continue}
+  if((m=x.match(/^(.+?)(ميه|مئه|مايه)$/))&&NW[m[1]]!=null){cur+=NW[m[1]]*100;got=started=true;continue}
+  if(x=='الاف'||x=='الف'){total+=(cur||1)*1000;cur=0;got=started=true;continue}
+  if(x=='نص'&&started){cur+=cur>=1000||total?500:.5;continue}
+  if(x=='ربع'&&started){cur+=.25;continue}
+  if(started)break}
+ return got?total+cur:null}
+const CAT_KW=[['food','مطعم|مطاعم|قهوه|كوفي|كافي|كافيه|فطور|غدا|عشا|برجر|بيتزا|شاورما|ستاربكس|ماكدونالدز|ماك|البيك|هرفي|كودو|كنتاكي|دانكن|تيم هورتنز|جاهز|هنقرستيشن|هنقر|مرسول|كيتا|توصيل اكل|وجبه|اكل|حلا|دونات|عصير|شاي|مندي|كبسه|شورما'],['fuel','بنزين|وقود|ديزل|محطه|ارامكو|ساسكو|الدريس|نفط|تعبئه|فيول|غسيل سياره|زيت'],['groc','بقاله|مقاضي|سوبرماركت|سوبر ماركت|هايبر|بنده|الدانوب|دانوب|العثيم|عثيم|كارفور|لولو|التميمي|تموينات|خضار|فواكه|لحم|دجاج|خبز|حليب|اسواق'],['fun','ترفيه|سينما|فلم|العاب|لعبه|ملاهي|بولينج|حفله|مباراه|فعاليه|موسم'],['shop','تسوق|ملابس|جزمه|حذاء|شنطه|عطر|عطور|مول|امازون|نون|شي ان|شيين|نمشي|ساعه|اكسسوار'],['subs','اشتراك|نتفلكس|شاهد|سبوتيفاي|يوتيوب|ابل ميوزك|بلايستيشن|اكس بوكس|ايكلاود|انغامي|ديزني'],['home','ايجار|كهرباء|ماء|مويه|صيانه|غاز|انترنت|فاتوره نت|اثاث|منزل|بيت|سباك|كهربائي|تنظيف'],['tech','جوال|ايفون|لابتوب|كمبيوتر|سماعه|شاحن|تقنيه|الكترونيات|جرير|اكسترا|ايباد'],['edu','دوره|كورس|كتاب|كتب|رسوم|مدرسه|جامعه|تعليم|قرطاسيه'],['trip','سفر|طيران|فندق|حجز|فلاي ناس|فلاي اديل|الخطوط|اوبر|كريم|تاكسي|قطار|تذكره طيران'],['health','صيدليه|دواء|علاج|مستشفى|عياده|طبيب|دكتور|النهدي|تحليل|اسنان|نظارات'],['charity','صدقه|تبرع|زكاه|خيري|احسان|كفاره']].map(([k,r])=>[k,new RegExp(r)]);
+function guessCat(t){const n=normA(t);const f=CAT_KW.find(([,r])=>r.test(n));return f?f[0]:null}
+function nlParse(raw){const t=normA(raw);let amount=null;
+ const dm=t.match(/\d+(?:[.,]\d+)?/g);if(dm){const nums=dm.map(x=>parseFloat(x.replace(',','.')));const near=t.match(/(\d+(?:[.,]\d+)?)\s*(ريال|رس|ر\.س|درهم|دينار|دولار|\$)/);amount=near?parseFloat(near[1].replace(',','.')):nums[0]}
+ if(amount==null)amount=wordsNum(t);
+ const isInc=/راتب|معاش|استلمت|جاني|جتني|وصلني|حولوا لي|حول لي|حولي|دخل|مكافاه|بونص|ارباح|ربحت|عيديه|قبضت/.test(t)&&!/دفعت|اشتريت|صرفت/.test(t);
+ let category;if(isInc)category=/راتب|معاش|قبضت/.test(t)?'راتب':/مكافاه|بونص/.test(t)?'مكافأة':/ارباح|ربحت|استثمار|اسهم/.test(t)?'استثمار':/هديه|عيديه/.test(t)?'هدية':/مشروع|عميل|فريلانس|عمل حر/.test(t)?'عمل حر':'دخل آخر';else category=guessCat(t);
+ const pay=/كاش|نقد|نقدا|كاشي/.test(t)?PAY[1]:PAY[0];
+ const dd0=new Date();if(/قبل امس|اول امس/.test(t))dd0.setDate(dd0.getDate()-2);else if(/امس|البارحه/.test(t))dd0.setDate(dd0.getDate()-1);
+ return{type:isInc?'inc':'exp',amount:amount>0?r2(amount):null,category:category||(isInc?'دخل آخر':'other'),catSure:!!category,pay,date:lf(dd0),note:String(raw).trim().slice(0,60)}}
+async function smartParse(text){const loc=nlParse(text);if(await aiInit()=='local')return loc;
+ try{const d=await aiJSON(`حلّل جملة مالية كتبها أو قالها مستخدم عربي (قد تكون عامية أو فيها أرقام بالكلمات أو أخطاء إملائية). تاريخ اليوم ${lf(new Date())}.
+الجملة: «${String(text).slice(0,300)}»
+أعد JSON فقط بهذا الشكل:
+{"type":"exp أو inc","amount":رقم أو null,"category":"للمصروف واحد فقط من: ${CATS.map(c=>c[0]+'='+c[2]).join('، ')} — وللدخل واحد من: ${INC.join('، ')}","pay":"card أو cash","date":"YYYY-MM-DD","note":"وصف قصير بالعربي","confident":true أو false}`,{tier:'quick'});
+  if(!d||!(+d.amount>0))return loc;
+  const type=d.type=='inc'?'inc':'exp',category=type=='inc'?(INC.includes(d.category)?d.category:'دخل آخر'):(CATS.some(c=>c[0]==d.category)?d.category:loc.category);
+  return{type,amount:r2(+d.amount),category,catSure:d.confident!==false,pay:d.pay=='cash'?PAY[1]:PAY[0],date:/^\d{4}-\d{2}-\d{2}$/.test(d.date||'')?d.date:loc.date,note:String(d.note||loc.note).slice(0,60)}}
+ catch(e){return loc}}
+
+/* ===== voice: speech recognition with keyboard-dictation fallback ===== */
+const SRX=window.SpeechRecognition||window.webkitSpeechRecognition;
+const I_MIC='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21M8.5 21h7"/></svg>';
+let REC=null;
+function listen(o){if(!SRX){o.err('unsupported');return null}let r,done=false;try{r=new SRX()}catch(e){o.err('unsupported');return null}
+ r.lang='ar-SA';r.interimResults=true;r.continuous=false;r.maxAlternatives=1;let fin='';
+ r.onresult=e=>{let t='';for(let k=0;k<e.results.length;k++)t+=e.results[k][0].transcript;fin=t;o.part&&o.part(t)};
+ r.onerror=e=>{if(done)return;done=true;o.err(e.error||'error')};
+ r.onend=()=>{if(done)return;done=true;o.end(fin)};
+ try{r.start()}catch(e){done=true;o.err('start')}return r}
+const MIC_ERR={'not-allowed':'المتصفح ما سمح بالمايك هنا. اضغط زر المايك في لوحة المفاتيح وتكلم في الخانة تحت، أو اسمح للمايك من إعدادات المتصفح.','service-not-allowed':'التعرف على الصوت غير متاح هنا. استخدم مايك لوحة المفاتيح وتكلم في الخانة تحت.','audio-capture':'ما لقيت مايك شغال على الجهاز.','no-speech':'ما سمعت شيء، اضغط وجرّب مرة ثانية.','network':'التعرف على الصوت يحتاج إنترنت. تقدر تكتبها تحت.','unsupported':'متصفحك ما يدعم التعرف على الصوت. اضغط زر المايك في لوحة المفاتيح وتكلم في الخانة تحت.','start':'تعذر تشغيل المايك، جرّب مرة ثانية.','aborted':'توقف الاستماع.','error':'صار خطأ في المايك، جرّب مرة ثانية.'};
+function voiceAdd(){
+ open(`<h3>أضف بالكلام</h3><p class="mut" style="margin-top:-8px">قل مثلًا: «دفعت خمسة وثلاثين ريال قهوة كاش» أو «استلمت راتب ٥٠٠٠»</p>
+<div class="vwrap"><button id="vmic" class="vmic" aria-label="ابدأ الاستماع">${I_MIC}</button><div id="vst" class="mut">اضغط وتكلم</div></div>
+<textarea id="vtxt" rows="2" placeholder="أو اكتبها هنا… (تقدر تستخدم مايك لوحة المفاتيح)"></textarea>
+<button class="btn" id="vgo" style="width:100%">افهم وأضف</button><p class="mut" id="veng" style="font-size:12px;text-align:center;margin:10px 0 0"></p>`);
+ aiInit().then(m=>{const e=$('#veng');if(e)e.textContent=m=='local'?'الفهم يتم على جهازك':'الفهم بالذكاء الاصطناعي · '+AI_LABEL[m]});
+ const mic=$('#vmic'),st=$('#vst'),tx=$('#vtxt');
+ const stop=()=>{mic.classList.remove('on');try{REC&&REC.stop()}catch(e){}REC=null};
+ mic.onclick=()=>{if(REC){stop();return}
+  mic.classList.add('on');st.textContent='أسمعك الحين… تكلم';
+  REC=listen({part:t=>{tx.value=t;st.textContent='أسمعك الحين…'},end:t=>{mic.classList.remove('on');REC=null;if(t.trim()){st.textContent='تمام، أفهم كلامك…';go()}else st.textContent=MIC_ERR['no-speech']},err:c=>{mic.classList.remove('on');REC=null;st.textContent=MIC_ERR[c]||MIC_ERR.error;if(c!='no-speech'&&c!='aborted')tx.focus()}});
+  if(!REC&&!SRX){mic.classList.remove('on')}};
+ const go=async()=>{const t=tx.value.trim();if(!t){st.textContent='اكتب أو قل وش صرفت.';tx.focus();return}
+  const b=$('#vgo');b.disabled=true;b.textContent='أفهم كلامك…';const r=await smartParse(t);
+  if(!$('#vgo'))return;b.disabled=false;b.textContent='افهم وأضف';
+  if(!r.amount){st.textContent='ما قدرت أحدد المبلغ. اذكره بوضوح، مثل: ٣٥ ريال مطعم.';return}
+  close();addTx(r.type,r);
+  setTimeout(()=>toast(r.catSure?'فهمت: '+fmt(r.amount)+' · '+(r.type=='inc'?r.category:cat(r.category)[2]):'فهمت المبلغ، اختر التصنيف المناسب'),450)};
+ $('#vgo').onclick=go;tx.onkeydown=e=>{if(e.key=='Enter'&&!e.shiftKey){e.preventDefault();go()}}}
+function voiceParse(t){const r=nlParse(t);if(!r.amount){voiceAdd();return}close();addTx(r.type,r)}
+
+/* ===== receipt reader: AI vision → on-device OCR → manual ===== */
+async function compressImg(file,max=1600,q=.86){try{const bmp=await createImageBitmap(file);const k=Math.min(1,max/Math.max(bmp.width,bmp.height)),c=document.createElement('canvas');c.width=Math.round(bmp.width*k);c.height=Math.round(bmp.height*k);const g=c.getContext('2d');g.fillStyle='#fff';g.fillRect(0,0,c.width,c.height);g.drawImage(bmp,0,0,c.width,c.height);const b=await new Promise(r=>c.toBlob(r,'image/jpeg',q));return b||file}catch(e){return file}}
+let TESS=null;
+function loadTess(){if(window.Tesseract)return Promise.resolve(window.Tesseract);if(TESS)return TESS;TESS=new Promise((res,rej)=>{const s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js';s.onload=()=>window.Tesseract?res(window.Tesseract):rej(new Error('ocr'));s.onerror=()=>{TESS=null;rej(new Error('ocr'))};document.head.appendChild(s)});return TESS}
+function parseReceiptText(raw){const t=AR_DIG(raw),lines=t.split(/\n/).map(x=>x.trim()).filter(Boolean);
+ const nums=s=>(s.match(/\d{1,3}(?:,\d{3})+(?:\.\d{1,2})?|\d+(?:\.\d{1,2})?/g)||[]).map(x=>parseFloat(x.replace(/,/g,''))).filter(v=>v>0&&v<1e6&&!(v%1===0&&v>=1900&&v<=2100));
+ const KT=/(الاجمالي|الإجمالي|اجمالي|إجمالي|المجموع|الصافي|المستحق|المبلغ المدفوع|total|grand|amount due|net|balance due|to pay)/i,KX=/(قبل|before|subtotal|sub total|excl|خصم|discount|vat no|الرقم الضريبي)/i;
+ let total=0;for(const l of lines)if(KT.test(l)&&!KX.test(l)){const v=nums(l);if(v.length)total=Math.max(total,v[v.length-1])}
+ if(!total){const all=lines.flatMap(nums).filter(v=>v%1!==0);total=all.length?Math.max(...all):0}
+ let date='',m;const j=t.replace(/\s/g,' ');
+ if((m=j.match(/(20\d{2})[-/.](\d{1,2})[-/.](\d{1,2})/)))date=`${m[1]}-${m[2].padStart(2,'0')}-${m[3].padStart(2,'0')}`;
+ else if((m=j.match(/(\d{1,2})[-/.](\d{1,2})[-/.](20\d{2})/)))date=`${m[3]}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`;
+ if(date&&!/^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/.test(date))date='';
+ let vat=0;for(const l of lines)if(/(ضريبه|ضريبة|vat|tax)/i.test(l)&&!/(الرقم|no\.?|number|رقم)/i.test(l)){const v=nums(l);if(v.length)vat=v[v.length-1]}
+ const store=(lines.find(l=>(l.match(/[A-Za-z\u0600-\u06FF]/g)||[]).length>=3&&!/(فاتوره|فاتورة|ضريبي|invoice|receipt|tax|vat|tel|هاتف|\d{5,})/i.test(l))||'').slice(0,40);
+ return{store,total,date,vat,items:[],category:guessCat(t)||'other',confidence:total?.45:.2,ocr:true}}
+async function readReceipt(blob,prog){const m=await aiInit();
+ if((m=='claude'||m=='server')&&AIX.img){prog('أقرأ الفاتورة بالذكاء الاصطناعي…',null);
+  return await aiJSON(`الصورة لفاتورة أو إيصال شراء (عربي أو إنجليزي، غالبًا من السعودية أو الخليج). اقرأها بدقة واستخرج:
+- store: اسم المتجر كما يظهر
+- total: المبلغ الإجمالي النهائي المدفوع شامل الضريبة (رقم فقط)
+- currency: رمز العملة إن ظهر (SAR, AED, KWD...)
+- date: تاريخ الفاتورة بصيغة YYYY-MM-DD (إن كان هجريًا حوّله لميلادي إن أمكن، وإلا "")
+- vat: قيمة الضريبة (رقم أو 0)
+- items: حتى 15 صنفًا [{"name":"","qty":1,"price":0}]
+- pay: "card" أو "cash" أو ""
+- category: الأنسب من: ${CATS.map(c=>c[0]+'='+c[2]).join('، ')}
+- confidence: رقم من 0 إلى 1 لمدى ثقتك في المبلغ
+إذا الصورة ليست فاتورة أعد {"notReceipt":true}. أعد JSON فقط.`,{image:blob,tier:'default'})}
+ if(m=='claude')throw{code:'no_ocr'};
+ prog('أجهّز القارئ على جهازك…',0);const T=await loadTess();
+ const r=await T.recognize(blob,'ara+eng',{logger:x=>{if(x.status=='recognizing text')prog('أقرأ النص من الصورة…',x.progress)}});
+ return parseReceiptText(r.data.text||'')}
+function receiptAdd(){
+ open(`<h3>تصوير فاتورة</h3><p class="mut" style="margin-top:-8px">صوّر الفاتورة كاملة وبإضاءة واضحة، وأطلع لك المتجر والمبلغ والتاريخ والأصناف.</p>
+<div class="rpick"><label class="btn s">📷 التقط صورة<input type="file" accept="image/*" capture="environment" id="rcam"></label><label class="btn s">🖼️ من الصور<input type="file" accept="image/*" id="rgal"></label></div>
+<div id="rprev"></div><div id="rst2" class="mut" style="margin:8px 0"></div><div class="bar" id="rbar" style="display:none"><i style="width:0"></i></div>
+<button class="btn" id="rgo" style="width:100%;margin-top:10px" disabled>استخراج البيانات</button><button class="btn s" id="rman" style="width:100%;margin-top:8px">أدخلها يدويًا</button><p class="mut" id="reng" style="font-size:12px;text-align:center;margin:10px 0 0"></p>`);
+ aiInit().then(m=>{const e=$('#reng');if(e)e.textContent=(m!='local'&&AIX.img)?'القراءة بالذكاء الاصطناعي · '+AI_LABEL[m]:m=='claude'?'قراءة الصور غير متاحة هنا، تقدر تدخلها يدويًا مع حفظ الصورة':'القراءة تتم على جهازك (تحتاج إنترنت أول مرة لتحميل القارئ)'});
+ let blob=null;const st=$('#rst2'),bar=$('#rbar'),go=$('#rgo');
+ const pick=async f=>{if(!f)return;st.textContent='أجهّز الصورة…';blob=await compressImg(f);$('#rprev').innerHTML=`<img src="${URL.createObjectURL(blob)}" alt="الفاتورة" style="width:100%;max-height:320px;object-fit:contain;border-radius:14px;margin-top:12px;background:#fff">`;st.textContent='';go.disabled=false};
+ $('#rcam').onchange=e=>pick(e.target.files[0]);$('#rgal').onchange=e=>pick(e.target.files[0]);
+ $('#rman').onclick=()=>receiptPreview({},blob);
+ go.onclick=async()=>{if(!blob)return;go.disabled=true;go.textContent='جاري الاستخراج…';
+  const prog=(msg,p)=>{if(!$('#rst2'))return;st.textContent=msg;if(p==null){bar.style.display='none'}else{bar.style.display='block';bar.firstChild.style.width=Math.round(p*100)+'%'}};
+  try{const d=await readReceipt(blob,prog);if(!$('#rgo'))return;
+   if(d&&d.notReceipt){st.textContent='الصورة ما تبدو فاتورة. جرّب صورة أوضح للفاتورة كاملة.';go.disabled=false;go.textContent='استخراج البيانات';return}
+   receiptPreview(d||{},blob)}
+  catch(e){if(!$('#rgo'))return;go.disabled=false;go.textContent='حاول مرة ثانية';
+   st.textContent=e&&e.code=='not_granted'?'ما تم السماح بالذكاء الاصطناعي. تقدر تدخلها يدويًا.':e&&e.code=='image_rejected'?'الصورة غير مقروءة، جرّب صورة أوضح.':e&&e.code=='no_ocr'?'قراءة الصور غير متاحة هنا. أدخلها يدويًا وأحفظ لك الصورة.':'تعذر قراءة الفاتورة الآن. تقدر تحاول مرة ثانية أو تدخلها يدويًا.';bar.style.display='none'}}}
+async function receiptPreview(data,blob){data=data||{};const cc=CATS.some(x=>x[0]==data.category)?data.category:'other',amt=+(data.total??data.amount)>0?r2(+(data.total??data.amount)):'',dt=/^\d{4}-\d{2}-\d{2}$/.test(data.date||'')?data.date:now.toISOString().slice(0,10),store=String(data.store||'').slice(0,40),items=Array.isArray(data.items)?data.items.slice(0,15):[],low=data.ocr||(data.confidence!=null&&+data.confidence<.6);let rc=cc,rp=data.pay=='cash'?PAY[1]:PAY[0];
+ open(`<h3>راجع البيانات قبل الحفظ</h3>${low&&amt?'<div class="demo"><span>راجع المبلغ جيدًا، القراءة قد لا تكون دقيقة.</span></div>':''}<label class="mut">المتجر</label><input id="rst" value="${esc(store)}" placeholder="اسم المتجر"><label class="mut">المبلغ الإجمالي</label><input id="ram" class="amt" type="number" step="0.01" inputmode="decimal" value="${amt}" placeholder="0.00">${+data.vat>0?`<p class="mut" style="margin:-8px 0 12px">منها ضريبة ${fmt(data.vat)}</p>`:''}<label class="mut">التصنيف</label><div class="chips">${CATS.map(x=>`<button class="chip ${x[0]==rc?'on':''}" data-rc="${x[0]}">${x[1]} ${x[2]}</button>`).join('')}</div><label class="mut">طريقة الدفع</label><div class="chips">${PAY.map(x=>`<button class="chip ${x==rp?'on':''}" data-rp="${x}">${x}</button>`).join('')}</div><label class="mut">التاريخ</label><input id="rdt" type="date" value="${dt}">
+${items.length?`<details class="glass card" style="margin:0 0 12px"><summary style="cursor:pointer">الأصناف (${items.length})</summary>${items.map(it=>`<div class="row" style="margin:6px 0;font-size:14px"><span class="grow">${esc(String(it.name||'').slice(0,40))}${+it.qty>1?' ×'+(+it.qty):''}</span><b>${fmt(+it.price||0)}</b></div>`).join('')}</details>`:''}
+${blob?'<label class="row" style="margin:4px 0 14px;cursor:pointer"><input type="checkbox" id="rkeep" checked style="width:20px;height:20px;margin:0;accent-color:var(--ac)"><span class="grow">احفظ صورة الفاتورة في أرشيف المستندات</span></label>':''}<button class="btn" id="rsave" style="width:100%">حفظ المصروف</button>`);
+ document.querySelectorAll('[data-rc]').forEach(b=>b.onclick=()=>{rc=b.dataset.rc;document.querySelectorAll('[data-rc]').forEach(x=>x.classList.toggle('on',x==b))});
+ document.querySelectorAll('[data-rp]').forEach(b=>b.onclick=()=>{rp=b.dataset.rp;document.querySelectorAll('[data-rp]').forEach(x=>x.classList.toggle('on',x==b))});
+ $('#rsave').onclick=async()=>{const a=parseFloat($('#ram').value);if(!(a>0)){$('#ram').style.borderColor='var(--bad)';$('#ram').focus();return}
+  const st2=$('#rst').value.trim(),id=S.nid++;S.tx.push({id,type:'exp',amount:r2(a),category:rc,pay:rp,date:$('#rdt').value||dt,note:st2});
+  let kept=true;if(blob&&$('#rkeep')&&$('#rkeep').checked){try{const du=await blobToDataURL(blob);S.docs=S.docs||[];S.docs.unshift({id:S.nid++,name:('فاتورة '+(st2||'')).trim().slice(0,40),mime:'image/jpeg',file:du,linkedTx:String(id),at:lf(new Date())});if(!save()){S.docs.shift();kept=false}}catch(e){kept=false}}
+  save();close();toast(kept?'✓ تمت إضافة المصروف من الفاتورة':'✓ أُضيف المصروف، لكن مساحة الأرشيف ممتلئة');render()}}
+
+/* ===== on-device analyst (works with no internet) ===== */
+function reply(q){const n=normA(q),e=sum(exps()),b=byCat(),i=inc(),pvE=sum(S.tx.filter(t=>isSpend(t)&&t.date.startsWith(pd))),proj=today?e/today*dim:e,has=r=>r.test(n),top=b.slice(0,3).map(x=>`• ${cat(x[0])[2]}: **${fmt(x[1])}** (${e?Math.round(x[1]/e*100):0}%)`).join('\n'),demoN=S.demo?'\n\n(الأرقام الحالية تجريبية)':'';
+ const catHit=CATS.find(c=>n.includes(normA(c[2])))||(guessCat(n)&&!has(/اشتراك/)?cat(guessCat(n)):null);
+ if(has(/^(هلا|السلام|مرحبا|هاي|اهلين|صباح|مساء)/))return`هلا والله! هذا الشهر صرفت **${fmt(e)}** من دخل **${fmt(i)}**، والمتبقي **${fmt(i-e)}**. وش تحب نشوف؟`+demoN;
+ if(!e&&!i)return'ما عندك عمليات مسجلة بعد. أضف أول مصروف أو دخل، وأحلل لك وضعك بالأرقام.';
+ if(has(/باقي|متبقي|رصيد|كم معي|كم عندي/))return`المتبقي من دخلك هذا الشهر **${fmt(i-e)}**. باقي **${nextPayIn()}** يوم على الراتب، يعني تقدر تصرف حوالي **${fmt(Math.max(0,i-e)/Math.max(1,nextPayIn()))}** يوميًا.`+demoN;
+ if(has(/كم اقدر|اصرف اليوم|مسموح/))return`تقدر تصرف اليوم بأمان حوالي **${fmt(safe())}** مع الحفاظ على ادخار ${sv()}% من دخلك.`+demoN;
+ if(has(/نهايه|المعدل|استمر|توقع/))return`معدلك الحالي **${fmt(e/Math.max(1,today))}** يوميًا، فالمتوقع تصرف حوالي **${fmt(proj)}** بنهاية الشهر${i?` (${Math.round(proj/i*100)}% من دخلك)`:''}.${pvE?`\nالشهر الماضي صرفت ${fmt(pvE)}.`:''}`+demoN;
+ if(has(/اوفر|وفر|ادخر|توفير/)){const g=+(AR_DIG(q).match(/\d+/)||[0])[0]||wordsNum(q)||1000,cut=b.filter(x=>['food','fun','shop','subs'].includes(x[0])),plan=cut.map(x=>[x,x[1]*.25]),s=plan.reduce((a,x)=>a+x[1],0);return`هدفك توفير **${fmt(g)}**. خطة مقترحة من مصاريفك الفعلية:\n${plan.map(([x,v])=>`• خفّض ${cat(x[0])[2]} 25%: توفر ${fmt(v)}`).join('\n')}\nالمجموع **${fmt(s)}**${s>=g?' ويكفي لهدفك.':`، والباقي ${fmt(g-s)} يحتاج مراجعة بقية المصاريف أو دخل إضافي.`}`+demoN}
+ if(has(/طبيعي|مقارن|الشهر الماضي|زاد|نقص/)){const pm=Object.fromEntries(byCat(pd)),ch=b.map(x=>[x[0],x[1]-(pm[x[0]]||0)]).sort((a,c)=>Math.abs(c[1])-Math.abs(a[1])).slice(0,3);return`متوقع تصرف **${fmt(proj)}** هذا الشهر مقابل **${fmt(pvE)}** الشهر الماضي، ونسبة إنفاقك ${i?Math.round(e/i*100):0}% من دخلك حتى الآن.\nأكبر التغيرات:\n${ch.map(([k,v])=>`• ${cat(k)[2]}: ${v>=0?'زاد':'نقص'} ${fmt(Math.abs(v))}`).join('\n')}`+demoN}
+ if(has(/ميزانيه|خطه|قسم دخلي/)){const RP=ruleP(),bm=Object.fromEntries(b),L=Object.entries(S.budgets);return`تقسيم مقترح لدخلك ${fmt(i)} حسب قاعدتك ${RP.join('/')}:\n• الأساسيات: ${fmt(i*RP[0]/100)}\n• الرغبات: ${fmt(i*RP[1]/100)}\n• الادخار: ${fmt(i*RP[2]/100)}${L.length?'\n\nحالة ميزانياتك:\n'+L.map(([k,l])=>`• ${cat(k)[2]}: ${fmt(bm[k]||0)} من ${fmt(l)}${(bm[k]||0)>l?' (متجاوزة)':''}`).join('\n'):''}`+demoN}
+ if(has(/اشتراك/))return S.subs.length?`عندك ${S.subs.length} اشتراك بإجمالي **${fmt(subsM())}** شهريًا:\n${S.subs.map(x=>`• ${x.n}: ${fmt(x.p)} (${x.cy}${paused(x)?'، موقوف':''})`).join('\n')}`:'ما عندك اشتراكات مسجلة.';
+ if(has(/قسط|اقساط|تابي|تمارا/)){const L=S.installments||[];return L.length?`أقساطك:\n${L.map(x=>`• ${x.name}: ${fmt(x.amount)} شهريًا، دفعت ${x.paid} من ${x.months}${x.paid<x.months?`، القادمة ${nextDue(x)}`:' ✓'}`).join('\n')}\nالمتبقي عليك **${fmt(L.reduce((a,x)=>a+Math.max(0,x.months-x.paid)*x.amount,0))}**.`:'ما عندك أقساط مسجلة.'}
+ if(has(/هدف|اهداف/))return S.goals.length?`أهدافك:\n${S.goals.map(g=>`• ${g.n}: ${fmt(g.c)} من ${fmt(g.t)} (${Math.round(g.c/g.t*100)}%)`).join('\n')}${i-e>0?`\nلو حوّلت نص المتبقي (${fmt((i-e)/2)}) لأقرب هدف، يكتمل أسرع.`:''}`:'ما عندك أهداف بعد. أضف هدف من صفحة الأهداف.';
+ if(has(/اقلل|قلل|تقليل|اخفض|اوقف/))return`أكثر المصاريف اللي تقدر تقللها:\n${b.filter(x=>!['home','health','edu','charity'].includes(x[0])).slice(0,3).map(x=>`• ${cat(x[0])[2]}: خفض 15% يوفر ${fmt(x[1]*.15)} شهريًا`).join('\n')}`+demoN;
+ if(has(/اي يوم|اكثر يوم|ايام/)){const wd=['الأحد','الاثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت'],W={};exps().forEach(t=>{const k=new Date(t.date+'T00:00:00').getDay();W[k]=(W[k]||0)+t.amount});const s2=Object.entries(W).sort((a,c)=>c[1]-a[1]);return s2.length?`أكثر يوم تصرف فيه: **${wd[s2[0][0]]}** بمجموع ${fmt(s2[0][1])} هذا الشهر.`:'ما فيه بيانات كافية.'}
+ if(has(/صحتي|وضعي|تقييم|حالتي|حلل/))return`صحتك المالية **${health()}/100**.\nهذا الشهر: دخل ${fmt(i)}، صرف ${fmt(e)}، المتوقع ${fmt(proj)}.\nأكثر مصاريفك:\n${top}`+demoN;
+ if(catHit){const k=catHit[0],cm=(b.find(x=>x[0]==k)||[0,0])[1],pm=(byCat(pd).find(x=>x[0]==k)||[0,0])[1];return`صرفت على ${catHit[2]} **${fmt(cm)}** هذا الشهر${pm?`، مقابل ${fmt(pm)} الشهر الماضي`:''}.`+demoN}
+ if(has(/وين|اكثر|فلوسي|صرفت/))return`من أصل **${fmt(e)}** صرفتها هذا الشهر:\n${top}`+demoN;
+ return'هذا السؤال يحتاج الذكاء الاصطناعي، وهو غير متصل الحين. أقدر أجاوبك محليًا عن: المتبقي، المصاريف حسب التصنيف، التوقع لنهاية الشهر، الميزانية، الاشتراكات، الأقساط، والأهداف.'}
+
+/* ===== chat ===== */
+const AI_RULES=`أنت «فلوسي AI» داخل تطبيق «صُرة» لإدارة الأموال الشخصية، وتتصرف كمستشار مالي شخصي محترف وودود.
+- رد بالعربية بلهجة خليجية بسيطة وواضحة.
+- افهم قصد المستخدم من كل رسالة حتى لو كانت مختصرة أو فيها أخطاء، وأجب عن أي موضوع حتى لو خارج المال بإجابة مفيدة وصحيحة.
+- في أسئلة فلوسه: اعتمد فقط على بيانات JSON المرفقة، واحسب بدقة (مجاميع، نسب، متوسطات، مقارنات بين الأشهر) واذكر الأرقام مع العملة. لا تخترع أي رقم أو عملية. إذا البيانات ما تكفي قل ذلك بوضوح.
+- إذا كانت isDemoData=true نبّه باختصار أن الأرقام تجريبية.
+- أعط خطوات عملية محددة (مثل: خفّض المطاعم من X إلى Y يعني توفير Z شهريًا) واربطها بأهدافه وأقساطه واشتراكاته عند الحاجة.
+- لا تلُم ولا تخوّف، وكن صريحًا ومحترمًا.
+- التنسيق: فقرات قصيرة، ونقاط تبدأ بـ • عند التعداد، و**عريض** للأرقام المهمة فقط. بدون جداول ولا عناوين.
+- الطول: مختصر للأسئلة البسيطة، ومنظم ومفصل عند طلب خطة أو تحليل.
+- في المواضيع الطبية أو القانونية أو قرارات الاستثمار الكبيرة: معلومة عامة مع تنبيه أنك لست مختصًا مرخصًا.
+- إذا الطلب غامض اسأل سؤالًا واحدًا فقط.`;
+function aiCtx(){const mk=k=>lf(new Date(now.getFullYear(),now.getMonth()-k,1)).slice(0,7),catName=k=>(k=='other'&&S.p&&S.p.otherBudgetLabel)?S.p.otherBudgetLabel:cat(k)[2];
+ const months=[0,1,2,3,4,5].map(k=>{const m=mk(k),T=S.tx.filter(t=>t.date.startsWith(m));return{month:m,income:r2(sum(T.filter(isIncomeTx))),spent:r2(sum(T.filter(isSpend)))}});
+ const cm=Object.fromEntries(byCat(mk(0))),lm=Object.fromEntries(byCat(mk(1))),a3={};[1,2,3].forEach(k=>byCat(mk(k)).forEach(([c,v])=>a3[c]=(a3[c]||0)+v/3));
+ const cats=[...new Set([...Object.keys(cm),...Object.keys(lm),...Object.keys(a3)])].map(k=>({category:catName(k),thisMonth:r2(cm[k]||0),lastMonth:r2(lm[k]||0),avgPrev3Months:r2(a3[k]||0)})).sort((x,y)=>y.thisMonth-x.thisMonth);
+ const wd=['الأحد','الاثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت'],W={};exps().forEach(t=>{const k=wd[new Date(t.date+'T00:00:00').getDay()];W[k]=r2((W[k]||0)+t.amount)});
+ const e=sum(exps()),i=inc(),bm=Object.fromEntries(byCat());
+ const build=nTx=>JSON.stringify({isDemoData:!!S.demo,currency:cur(),today:lf(now),userName:(S.p&&S.p.name)||'',paydayDayOfMonth:payDay(),daysUntilPayday:nextPayIn(),daysLeftInMonth:dLeft,
+  thisMonth:{income:r2(i),spent:r2(e),remaining:r2(i-e),spendingRatePct:i?Math.round(e/i*100):null,dailyAvg:r2(e/Math.max(1,today)),projectedMonthEnd:r2(e/Math.max(1,today)*dim),safeToSpendToday:r2(safe()),savingsTargetPct:sv(),budgetRule:ruleP()},
+  last6Months:months,categories:cats,spendingByWeekdayThisMonth:W,
+  budgets:Object.entries(S.budgets).map(([k,l])=>({category:catName(k),limit:l,spent:r2(bm[k]||0)})),
+  subscriptions:S.subs.map(x=>({name:x.n,price:x.p,cycle:x.cy,chargeDay:x.d,paused:paused(x)})),monthlySubscriptionsTotal:r2(subsM()),
+  installments:(S.installments||[]).map(x=>({name:x.name,monthly:x.amount,paid:x.paid,total:x.months,nextDue:x.paid<x.months?nextDue(x):null})),
+  goals:S.goals.map(g=>({name:g.n,target:g.t,saved:g.c,remaining:Math.max(0,g.t-g.c)})),
+  savingsChallenges:(S.challenges||[]).map(c=>({avoid:catName(c.c),days:c.n,start:c.s})),
+  healthScore:health(),alerts:alerts().map(a=>String(a[1]).replace(/&[a-z#0-9]+;/g,'')),
+  transactionsFormat:'[date,type,amount,category_or_party,note]',
+  transactions:S.tx.slice().sort((a,c)=>c.date.localeCompare(a.date)).slice(0,nTx).map(t=>[t.date,t.type=='transfer'?(t.dir=='out'?'transfer_out':'transfer_in'):t.type,t.amount,t.type=='inc'?t.category:t.type=='transfer'?(t.party||''):catName(t.parts?t.parts[0].c:t.category),String(t.note||'').slice(0,40)])});
+ let s=build(150);if(s.length>30000)s=build(60);return s}
+function mdLite(t){return esc(t).replace(/\*\*(.+?)\*\*/g,'<b>$1</b>').replace(/^#{1,4}\s*/gm,'').replace(/^\s*[-*]\s+/gm,'• ')}
+let AIC=null;
+function chatHTML(){const L=(S.aiChat||[]).slice(-30);return L.length?L.map(m=>`<div class="m ${m.role=='user'?'u':'a'}">${m.role=='user'?esc(m.content):mdLite(m.content)}</div>`).join(''):`<div class="m a">هلا${S.p&&S.p.name?' '+esc(S.p.name):''}! أنا فلوسي AI، مستشارك المالي. أعرف دخلك ومصاريفك وأهدافك وأقساطك، وأجاوبك عن أي شيء ثاني بعد. وش في بالك؟</div>`}
+async function ask(q){q=(q||'').trim();const c=$('#chat');if(!q||!c||AIC)return;
+ S.aiChat=S.aiChat||[];S.aiChat.push({role:'user',content:q});
+ c.insertAdjacentHTML('beforeend','<div class="m u"></div><div class="m a typing"><i></i><i></i><i></i></div>');c.children[c.children.length-2].textContent=q;const el=c.lastChild;c.scrollTop=1e5;
+ const go=$('#ai_go');AIC=new AbortController();if(go){go.textContent='إيقاف';go.classList.add('s')}
+ let out='';
+ try{const mode=await aiInit();
+  if(mode=='local')out=reply(q);
+  else{const h=S.aiChat.slice(-10);while(h.length&&h[0].role!='user')h.shift();
+   const turns=h.map((x,k)=>k==0?{role:'user',content:AI_RULES+'\n\nبيانات المستخدم (JSON):\n'+aiCtx()+'\n\nرسالة المستخدم:\n'+x.content}:{role:x.role,content:x.content});
+   out=await aiText(turns,{signal:AIC.signal,onText:({text})=>{el.classList.remove('typing');el.innerHTML=mdLite(text);c.scrollTop=1e5}})}}
+ catch(e){if(e&&(e.code=='cancelled'||e.name=='AbortError'))out=((e.text||el.textContent||'').replace(/^…$/,'')+'\n(تم الإيقاف)').trim();
+  else out=(e&&e.code=='not_granted'?'ما تم السماح باستخدام الذكاء الاصطناعي، فهذه إجابة من أرقامك:\n\n':e&&e.code=='rate_limited'?'طلبات كثيرة الحين، انتظر شوي. هذه إجابة من أرقامك:\n\n':'تعذر الوصول للذكاء الاصطناعي الآن، فهذه إجابة من أرقامك:\n\n')+reply(q)}
+ el.classList.remove('typing');el.innerHTML=mdLite(out);S.aiChat.push({role:'assistant',content:out});S.aiChat=S.aiChat.slice(-30);save();
+ AIC=null;if(go&&go.isConnected){go.textContent='إرسال';go.classList.remove('s')}if(c.isConnected)c.scrollTop=1e5}
+function aiView(){return`<div class="aihd"><h1>فلوسي AI</h1><span class="aibadge" id="aib">…</span></div><p class="mut" style="margin:2px 0 14px">مستشارك المالي. اسأله عن فلوسك أو أي شيء ثاني. عند السؤال يُرسل ملخص أرقامك وآخر عملياتك للتحليل فقط.</p>
+<div class="glass card chatbox"><div class="chat" id="chat">${chatHTML()}</div></div>
+<div class="qa" style="margin-top:4px">${['حلّل وضعي المالي بالتفصيل','وين راحت فلوسي؟','هل مصروفي هذا الشهر طبيعي؟','كم أقدر أصرف اليوم؟','إذا استمريت بهذا المعدل كم بصرف نهاية الشهر؟','أبي أوفر 1000 ريال','وش المصاريف اللي أقدر أقللها؟','ساعدني أسوي ميزانية','متى أخلص أقساطي؟'].map(x=>`<button class="chip" data-q="${x}">${x}</button>`).join('')}</div>
+<div class="composer"><input id="ai_q" placeholder="اكتب سؤالك…" autocomplete="off"><button class="ib" id="ai_mic" aria-label="اسأل بالصوت">${I_MIC}</button><button class="btn" id="ai_go">إرسال</button></div>
+<button class="lnk" id="ai_new" style="background:none;border:0;color:var(--mut);font:500 13px var(--fb);cursor:pointer;padding:10px 2px">محادثة جديدة</button>`}
+function bindAI(){const b=$('#aib');if(b)aiInit().then(m=>{if(b.isConnected){b.textContent=AI_LABEL[m];b.dataset.m=m}});
+ const c=$('#chat');if(c)c.scrollTop=1e5;
+ const g=$('#ai_go');if(g){g.onclick=()=>{if(AIC){AIC.abort();return}const v=$('#ai_q').value;$('#ai_q').value='';ask(v)};$('#ai_q').onkeydown=e=>{if(e.key=='Enter'){e.preventDefault();g.click()}}}
+ const nw=$('#ai_new');if(nw)nw.onclick=()=>{if(AIC)AIC.abort();S.aiChat=[];save();$('#chat').innerHTML=chatHTML()};
+ const mc=$('#ai_mic');if(mc)mc.onclick=()=>{if(REC){try{REC.stop()}catch(e){}return}mc.classList.add('on');REC=listen({part:t=>{$('#ai_q').value=t},end:t=>{mc.classList.remove('on');REC=null;if(t.trim()){$('#ai_q').value='';ask(t)}},err:k=>{mc.classList.remove('on');REC=null;toast(k=='no-speech'?'ما سمعت شيء':'استخدم مايك لوحة المفاتيح للكتابة بالصوت');$('#ai_q').focus()}})}}
+function aiSettings(){const p=S.p||{};open(`<h3>ربط الذكاء الاصطناعي</h3><p class="mut" style="line-height:1.8;margin-top:-6px">داخل Claude يشتغل تلقائيًا. خارج Claude، شغّل خادم «صُرة» المرفق وضع رابطه هنا ليشتغل فلوسي AI وقراءة الفواتير بالكامل. بدون خادم، يشتغل التحليل محليًا على جهازك.</p>
+<div class="demo" id="aist"><span>الحالة: جاري الفحص…</span></div>
+<label class="mut">رابط الخادم (اختياري)</label><input id="aiu" dir="ltr" placeholder="https://your-server.com" value="${esc(p.aiUrl||'')}"><label class="mut">رمز الوصول (APP_TOKEN، اختياري)</label><input id="ait" dir="ltr" type="password" value="${esc(p.aiTok||'')}" autocomplete="off">
+<button class="btn" id="aisv" style="width:100%">حفظ واختبار الاتصال</button>`);
+ const show=m=>{const e=$('#aist');if(e)e.firstChild.textContent='الحالة: '+AI_LABEL[m]+(m!='local'&&AIX.img?' · قراءة الصور متاحة':'')};
+ aiInit().then(show);
+ $('#aisv').onclick=async()=>{const u=$('#aiu').value.trim();if(u&&!/^https?:\/\//.test(u)){toast('الرابط لازم يبدأ بـ http أو https');return}setP({aiUrl:u,aiTok:$('#ait').value.trim()});$('#aist').firstChild.textContent='الحالة: أختبر الاتصال…';const m=await aiInit(true);show(m);toast(m=='local'?'ما قدرت أتصل بالخادم، راجع الرابط والرمز':'✓ '+AI_LABEL[m])}}
+
 const IC={plus:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>',inc:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v10M8 10l4 4 4-4"/><path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg>',month:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5.5A1.5 1.5 0 0 1 4.5 4H10a2 2 0 0 1 2 2v14a2 2 0 0 0-2-2H3z"/><path d="M21 5.5A1.5 1.5 0 0 0 19.5 4H14a2 2 0 0 0-2 2v14a2 2 0 0 1 2-2h7z"/></svg>',week:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>',dec:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v16M8 20h8M5 8h14"/><path d="M5 8 2.5 14a2.5 2.5 0 0 0 5 0z"/><path d="M19 8l-2.5 6a2.5 2.5 0 0 0 5 0z"/></svg>'};
 const NAV=[['home','<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 10.5 12 3.5l8.5 7V19a1.5 1.5 0 0 1-1.5 1.5h-4v-6h-6v6H5A1.5 1.5 0 0 1 3.5 19z"/></svg>','الرئيسية'],['exp','<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3.5h12v17l-3-2-3 2-3-2-3 2z"/><path d="M9 8.5h6M9 12.5h6"/></svg>','المصاريف'],['ana','<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20V11M10 20V5M16 20v-7M21 20H3"/></svg>','التحليل'],['goals','<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r=".8" fill="currentColor"/></svg>','الأهداف'],['ai','<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 3.5l1.8 5 5 1.8-5 1.8L11 17l-1.8-4.9-5-1.8 5-1.8z"/><path d="M18.5 15.5l.7 1.8 1.8.7-1.8.7-.7 1.8-.7-1.8-1.8-.7 1.8-.7z"/></svg>','فلوسي AI']];
 const I_BELL='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 16.5V11a6 6 0 0 1 12 0v5.5l1.5 2h-15z"/><path d="M10 20.5a2 2 0 0 0 4 0"/></svg>';
@@ -722,7 +932,7 @@ document.querySelectorAll('.sug').forEach(b=>b.onclick=()=>b.classList.toggle('o
 document.querySelectorAll('[data-q]').forEach(b=>b.onclick=()=>ask(b.dataset.q));
 const c=$('#clr');if(c)c.onclick=()=>{const pp=S.p;S={demo:0,nid:1,tx:[],budgets:{},goals:[],subs:[],p:pp};save();render()};
 const si=$('#setInc');if(si)si.onclick=()=>editSheet('inc');
-const g=$('#ai_go');if(g){g.onclick=()=>{ask($('#ai_q').value);$('#ai_q').value=''};$('#ai_q').onkeydown=e=>{if(e.key=='Enter')g.click()}}
+if(tab=='ai')bindAI();
 const q=$('#q');if(q){q.oninput=()=>{flt.q=q.value;clearTimeout(q._t);q._t=setTimeout(()=>{render();$('#q').focus();$('#q').setSelectionRange(99,99)},250)};$('#r').onchange=e=>{flt.r=e.target.value;render()};$('#c').onchange=e=>{flt.c=e.target.value;render()}}
 const hc=$('#hcard');if(hc)hc.onclick=healthDetail;
 const sty=$('#sty');if(sty)sty.onclick=()=>sumUI('m');
