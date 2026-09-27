@@ -734,8 +734,8 @@ const SBK='wf_sb';
 let SBS=null,SBok=null,SBt=null,SBbusy=false,SBlast='';
 try{SBS=JSON.parse(localStorage.getItem(SBK)||'null')}catch(e){}
 function sbSave(){try{SBS?localStorage.setItem(SBK,JSON.stringify(SBS)):localStorage.removeItem(SBK)}catch(e){}}
-const SB_ERR={invalid_credentials:'الإيميل أو كلمة المرور غلط.',email_not_confirmed:'أكّد إيميلك أول من الرسالة اللي وصلتك، وبعدها سجّل دخول.',user_already_exists:'هذا الإيميل عنده حساب. سجّل دخول بدلًا من ذلك.',email_exists:'هذا الإيميل عنده حساب. سجّل دخول بدلًا من ذلك.',weak_password:'كلمة المرور ضعيفة. خلها 8 أحرف أو أكثر وفيها أرقام وحروف.',over_email_send_rate_limit:'طلبات كثيرة على الإيميل، انتظر شوي وجرّب.',over_request_rate_limit:'طلبات كثيرة، انتظر دقيقة وجرّب.',validation_failed:'تأكد من الإيميل وكلمة المرور.',same_password:'اختر كلمة مرور مختلفة عن القديمة.'};
-function sbMsg(j,st){const c=j&&(j.error_code||j.code||j.error);return SB_ERR[c]||(st==400&&/Invalid login/i.test(j&&(j.msg||j.error_description||''))?SB_ERR.invalid_credentials:(j&&(j.msg||j.message||j.error_description))||'صار خطأ، جرّب مرة ثانية.')}
+const SB_ERR={email_address_not_authorized:'إرسال الإيميلات غير مفعّل لهذا العنوان بعد. تواصل مع صاحب التطبيق.',invalid_credentials:'الإيميل أو كلمة المرور غلط.',email_not_confirmed:'أكّد إيميلك أول من الرسالة اللي وصلتك، وبعدها سجّل دخول.',user_already_exists:'هذا الإيميل عنده حساب. سجّل دخول بدلًا من ذلك.',email_exists:'هذا الإيميل عنده حساب. سجّل دخول بدلًا من ذلك.',weak_password:'كلمة المرور ضعيفة. خلها 8 أحرف أو أكثر وفيها أرقام وحروف.',over_email_send_rate_limit:'طلبات كثيرة على الإيميل، انتظر شوي وجرّب.',over_request_rate_limit:'طلبات كثيرة، انتظر دقيقة وجرّب.',validation_failed:'تأكد من الإيميل وكلمة المرور.',same_password:'اختر كلمة مرور مختلفة عن القديمة.'};
+function sbMsg(j,st){const c=j&&(j.error_code||j.code||j.error);if(/not authorized/i.test((j&&(j.msg||j.message))||''))return SB_ERR.email_address_not_authorized;return SB_ERR[c]||(st==400&&/Invalid login/i.test(j&&(j.msg||j.error_description||''))?SB_ERR.invalid_credentials:(j&&(j.msg||j.message||j.error_description))||'صار خطأ، جرّب مرة ثانية.')}
 async function sbFetch(path,o={},auth){const h=Object.assign({'apikey':SB.key,'content-type':'application/json'},o.headers||{});if(auth){await sbFresh();if(!SBS)throw{code:'no_session',message:'انتهت الجلسة، سجّل دخول مرة ثانية.'};h.Authorization='Bearer '+SBS.access_token}
  const c=new AbortController(),tm=setTimeout(()=>c.abort(),15000);let r;try{r=await fetch(SB.url+path,Object.assign({},o,{headers:h,signal:c.signal}))}catch(e){throw{code:'network',message:'تعذر الاتصال. تأكد من الإنترنت.'}}finally{clearTimeout(tm)}
  let j=null;const t=await r.text();try{j=t?JSON.parse(t):null}catch(e){}
@@ -753,7 +753,7 @@ async function cloudPull(opts={}){if(!SBS)return'none';const rows=await sbFetch(
  if(opts.preferRemote||rm>lm||(S.demo&&!R.demo)||(!unpushed&&rm!==lm)){const docs=S.docs;S=R;S.docs=docs||[];S._pushed=S._mod=rm;S.installments=S.installments||[];try{localStorage.setItem(K,JSON.stringify(S))}catch(e){}SBlast=row.updated_at;return'pulled'}
  if(lm>rm){await cloudPush();return'pushed'}return'same'}
 async function cloudBoot(){
- const h=location.hash||'';if(/access_token=/.test(h)){const q=new URLSearchParams(h.slice(1));const typ=q.get('type');try{const u=await fetch(SB.url+'/auth/v1/user',{headers:{apikey:SB.key,Authorization:'Bearer '+q.get('access_token')}}).then(r=>r.ok?r.json():null);if(u&&sbStore({access_token:q.get('access_token'),refresh_token:q.get('refresh_token'),expires_in:q.get('expires_in'),user:u})){history.replaceState(null,'',location.pathname+location.search);if(typ=='recovery'){setTimeout(newPassUI,900)}else toast('✓ تم تأكيد حسابك وتسجيل الدخول')}}catch(e){}}
+ const h=location.hash||'';if(/access_token=/.test(h)){const q=new URLSearchParams(h.slice(1));const typ=q.get('type');try{const u=await fetch(SB.url+'/auth/v1/user',{headers:{apikey:SB.key,Authorization:'Bearer '+q.get('access_token')}}).then(r=>r.ok?r.json():null);if(u&&sbStore({access_token:q.get('access_token'),refresh_token:q.get('refresh_token'),expires_in:q.get('expires_in'),user:u})){history.replaceState(null,'',location.pathname+location.search);const md=u.user_metadata||{};setP({guest:false,name:(S.p&&S.p.name)||md.name||'',phone:(S.p&&S.p.phone)||(md.phone?fmtPhone(String(md.phone).replace('+','')):'')});if(typ=='recovery'){setTimeout(newPassUI,900)}else toast('✓ تم تأكيد حسابك وتسجيل الدخول')}}catch(e){}}
  else if(/error_description=/.test(h)){const q=new URLSearchParams(h.slice(1));history.replaceState(null,'',location.pathname+location.search);setTimeout(()=>toast('رابط التأكيد منتهي أو غير صالح. سجّل دخول أو اطلب رابط جديد.'),900)}
  if(!SBS)return;try{const r=await cloudPull();if(r=='pulled')render()}catch(e){}
  addEventListener('visibilitychange',()=>{if(document.visibilityState=='visible'&&SBS&&!SBbusy&&!(+S._mod>(+S._pushed||0)))cloudPull().then(r=>{if(r=='pulled'){render();toast('✓ تم تحديث بياناتك من حسابك')}}).catch(()=>{});else if(document.visibilityState=='hidden'&&SBS&&+S._mod>(+S._pushed||0))cloudPush().catch(()=>{})})}
@@ -767,43 +767,51 @@ let GM='home';
 function logoSrc(){const i=document.querySelector('.logo img');return i?i.src:''}
 function hideGate(){const g=$('#gate');if(!g||g.hidden)return;g.classList.add('out');setTimeout(()=>{g.hidden=true;g.classList.remove('out');g.innerHTML=''},300)}
 function showGate(mode){GM=mode||'home';const g=$('#gate');if(!g)return;close();g.hidden=false;
- const top=`<div class="gtop"><img src="${logoSrc()}" alt=""><h1>صُرة</h1><p>${GM=='up'?'أنشئ حسابك وتقدر تدخل من أي جوال أو متصفح.':GM=='in'?'هلا فيك من جديد.':'اعرف وين تروح فلوسك، وخطّط لأهدافك بهدوء.'}</p></div>`;
+ const sub={up:'أنشئ حسابك وتقدر تدخل من أي جوال أو متصفح.',in:'هلا فيك من جديد.',fp:'اكتب إيميلك ونرسل لك رابط تغيّر فيه كلمة المرور.'}[GM]||'اعرف وين تروح فلوسك، وخطّط لأهدافك بهدوء.';
+ const top=`<div class="gtop"><img src="${logoSrc()}" alt=""><h1>${GM=='fp'?'نسيت كلمة المرور':'صُرة'}</h1><p>${sub}</p></div>`;
  const pw=(id,ac)=>`<div class="pwf"><input id="${id}" type="password" autocomplete="${ac}" dir="ltr" placeholder="${ac=='new-password'?'8 أحرف أو أكثر':''}"><button class="ib" type="button" data-pw="${id}" aria-label="إظهار كلمة المرور">${IC.eye}</button></div>`;
- const ph=`<div class="phf"><input id="gph" type="tel" inputmode="tel" autocomplete="tel" placeholder="05xxxxxxxx"><span></span></div>`;
+ const em=`<input id="gem" type="email" inputmode="email" autocomplete="email" autocapitalize="none" autocorrect="off" dir="ltr" placeholder="name@example.com">`;
  let body='';
- if(GM=='up')body=`<form class="gform" id="gf" novalidate><label class="mut" for="gnm">الاسم</label><input id="gnm" autocomplete="name" maxlength="40" placeholder="اسمك"><label class="mut" for="gph">رقم الجوال</label>${ph}<label class="mut" for="gpw">كلمة المرور</label>${pw('gpw','new-password')}<div class="gerr" id="gerr" role="alert"></div><button class="btn" id="ggo" type="submit">إنشاء الحساب</button></form>
+ if(GM=='up')body=`<form class="gform" id="gf" novalidate><label class="mut" for="gnm">الاسم</label><input id="gnm" autocomplete="name" maxlength="40" placeholder="اسمك"><label class="mut" for="gph">رقم الجوال</label><div class="phf"><input id="gph" type="tel" inputmode="tel" autocomplete="tel" placeholder="05xxxxxxxx"></div><label class="mut" for="gem">الإيميل</label>${em}<label class="mut" for="gpw">كلمة المرور</label>${pw('gpw','new-password')}<div class="gerr" id="gerr" role="alert"></div><button class="btn" id="ggo" type="submit">إنشاء الحساب</button></form>
 <div class="gfoot"><button class="lnk" data-gm="in">عندك حساب؟ سجّل دخول</button></div>`;
- else if(GM=='in')body=`<form class="gform" id="gf" novalidate><label class="mut" for="gph">رقم الجوال</label>${ph}<label class="mut" for="gpw">كلمة المرور</label>${pw('gpw','current-password')}<div class="gerr" id="gerr" role="alert"></div><button class="btn" id="ggo" type="submit">دخول</button></form>
+ else if(GM=='in')body=`<form class="gform" id="gf" novalidate><label class="mut" for="gem">الإيميل</label>${em}<label class="mut" for="gpw">كلمة المرور</label>${pw('gpw','current-password')}<button class="lnk" type="button" data-gm="fp" style="align-self:flex-start;margin:-8px 0 6px;padding:8px 2px">نسيت كلمة المرور؟</button><div class="gerr" id="gerr" role="alert"></div><button class="btn" id="ggo" type="submit">دخول</button></form>
 <div class="gfoot"><button class="lnk" data-gm="up">ما عندك حساب؟ أنشئ حساب</button></div>`;
+ else if(GM=='fp')body=`<form class="gform" id="gf" novalidate><label class="mut" for="gem">الإيميل</label>${em}<div class="gerr" id="gerr" role="alert"></div><button class="btn" id="ggo" type="submit">أرسل رابط التغيير</button></form>
+<div class="gfoot"><button class="lnk" data-gm="in">رجوع لتسجيل الدخول</button></div>`;
  else body=`<div class="gform"><button class="btn" data-gm="up">إنشاء حساب</button><button class="btn s" data-gm="in" style="margin-top:10px">تسجيل الدخول</button></div>
 <div class="gfoot"><button class="lnk" id="gguest">المتابعة بدون حساب</button><p class="gnote">بدون حساب تبقى بياناتك على هذا الجهاز فقط.</p></div>`;
- g.innerHTML=`<div class="gwrap">${GM=='home'?'':`<button class="ib" data-gm="home" aria-label="رجوع" style="align-self:flex-start;transform:scaleX(-1)">${IC.arrow}</button>`}${top}${body}<p class="gnote" id="gnet"></p></div>`;
+ g.innerHTML=`<div class="gwrap">${GM=='home'?'':`<button class="ib" data-gm="${GM=='fp'?'in':'home'}" aria-label="رجوع" style="align-self:flex-start;transform:scaleX(-1)">${IC.arrow}</button>`}${top}${body}<p class="gnote" id="gnet"></p></div>`;
  g.scrollTop=0;
- g.querySelectorAll('[data-gm]').forEach(b=>b.onclick=()=>showGate(b.dataset.gm));
+ g.querySelectorAll('[data-gm]').forEach(b=>b.onclick=()=>{const v=$('#gem')&&$('#gem').value;showGate(b.dataset.gm);if(v&&$('#gem'))$('#gem').value=v});
  g.querySelectorAll('[data-pw]').forEach(b=>b.onclick=()=>{const i=$('#'+b.dataset.pw);i.type=i.type=='password'?'text':'password';b.setAttribute('aria-label',i.type=='password'?'إظهار كلمة المرور':'إخفاء كلمة المرور')});
  const gu=$('#gguest');if(gu)gu.onclick=()=>{setP({guest:true});hideGate();render()};
  sbReachable().then(ok=>{const n=$('#gnet');if(!ok&&n)n.textContent=window.claude?'الحسابات تشتغل من رابط الموقع على GitHub، مو من داخل Claude. تقدر تكمل بدون حساب.':'تعذر الوصول لخدمة الحسابات. تأكد من الإنترنت.'});
  const f=$('#gf');if(!f)return;
- const err=m=>{$('#gerr').textContent=m};
- const phi=$('#gph');phi.oninput=()=>{const d=normPhone(phi.value);phi.nextElementSibling.textContent=''};
- f.onsubmit=async e=>{e.preventDefault();err('');
-  const nm=GM=='up'?$('#gnm').value.trim():'',d=normPhone(phi.value),pw=$('#gpw').value;
-  if(GM=='up'&&nm.length<2){err('اكتب اسمك.');$('#gnm').focus();return}
-  if(!d){err('رقم الجوال غير صحيح. اكتبه مثل 05xxxxxxxx.');phi.focus();return}
-  if(GM=='up'&&pw.length<8){err('كلمة المرور لازم تكون 8 أحرف أو أكثر.');$('#gpw').focus();return}
-  if(!pw){err('اكتب كلمة المرور.');$('#gpw').focus();return}
+ const msg=(m,ok)=>{const e=$('#gerr');e.textContent=m;e.style.color=ok?'var(--good)':''};
+ const back=/^https?:$/.test(location.protocol)?'?redirect_to='+encodeURIComponent(location.origin+location.pathname):'';
+ const okEmail=v=>/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v);
+ f.onsubmit=async e=>{e.preventDefault();msg('');
+  const nm=$('#gnm')?$('#gnm').value.trim():'',ph=$('#gph')?normPhone($('#gph').value):'',emv=$('#gem').value.trim().toLowerCase(),pw=$('#gpw')?$('#gpw').value:'';
+  if(GM=='up'&&nm.length<2){msg('اكتب اسمك.');$('#gnm').focus();return}
+  if(GM=='up'&&!ph){msg('رقم الجوال غير صحيح. اكتبه مثل 05xxxxxxxx.');$('#gph').focus();return}
+  const legacy=GM=='in'&&!emv.includes('@')&&normPhone(emv);
+  if(!legacy&&!okEmail(emv)){msg('اكتب إيميل صحيح.');$('#gem').focus();return}
+  if(GM=='up'&&pw.length<8){msg('كلمة المرور لازم تكون 8 أحرف أو أكثر.');$('#gpw').focus();return}
+  if(GM=='in'&&!pw){msg('اكتب كلمة المرور.');$('#gpw').focus();return}
   const b=$('#ggo'),lbl=b.textContent;b.disabled=true;b.textContent='لحظة…';
-  try{let j;
-   if(GM=='up'){j=await sbFetch('/auth/v1/signup',{method:'POST',body:JSON.stringify({email:phoneEmail(d),password:pw,data:{name:nm,phone:'+'+d}})});
-    if(!j||!j.access_token){b.disabled=false;b.textContent=lbl;err('انشأ الحساب لكن يحتاج تفعيل. (للمسؤول: عطّل Confirm email في إعدادات Supabase)');return}}
-   else j=await sbFetch('/auth/v1/token?grant_type=password',{method:'POST',body:JSON.stringify({email:phoneEmail(d),password:pw})});
+  try{
+   if(GM=='fp'){await sbFetch('/auth/v1/recover'+back,{method:'POST',body:JSON.stringify({email:emv})});b.disabled=false;b.textContent=lbl;msg('أرسلنا رابط تغيير كلمة المرور على '+emv+'. افتحه من هذا الجهاز. إذا ما لقيته شوف مجلد الرسائل غير المرغوبة (Spam).',true);return}
+   let j;
+   if(GM=='up'){j=await sbFetch('/auth/v1/signup'+back,{method:'POST',body:JSON.stringify({email:emv,password:pw,data:{name:nm,phone:'+'+ph}})});
+    if(!j||!j.access_token){setP({name:nm,phone:fmtPhone(ph)});b.disabled=false;b.textContent=lbl;msg('تم إنشاء حسابك ✓ أرسلنا رابط تأكيد على '+emv+'. افتحه وبيدخلك تلقائيًا.',true);return}}
+   else j=await sbFetch('/auth/v1/token?grant_type=password',{method:'POST',body:JSON.stringify({email:legacy?phoneEmail(legacy):emv,password:pw})});
    sbStore(j);b.textContent='أجهّز بياناتك…';
    const r=await cloudPull().catch(()=>'err');
-   const meta=(j.user&&j.user.user_metadata)||{};setP({guest:false,name:(S.p&&S.p.name)||meta.name||nm,phone:fmtPhone(d)});
-   hideGate();render();toast(GM=='up'?'✓ أهلًا '+(nm.split(' ')[0])+'، انشأ حسابك':r=='pulled'?'✓ أهلًا! رجعت بياناتك من حسابك':'✓ تم تسجيل الدخول')}
+   const meta=(j.user&&j.user.user_metadata)||{};setP({guest:false,name:(S.p&&S.p.name)||meta.name||nm,phone:(S.p&&S.p.phone)||(meta.phone?fmtPhone(String(meta.phone).replace('+','')):ph?fmtPhone(ph):'')});
+   hideGate();render();toast(GM=='up'?'✓ أهلًا '+nm.split(' ')[0]+'، انشأ حسابك':r=='pulled'?'✓ أهلًا! رجعت بياناتك من حسابك':'✓ تم تسجيل الدخول')}
   catch(e2){if(!$('#ggo'))return;b.disabled=false;b.textContent=lbl;
-   err(e2.code=='invalid_credentials'?'رقم الجوال أو كلمة المرور غلط.':(e2.code=='user_already_exists'||e2.code=='email_exists')?'هذا الرقم عنده حساب. سجّل دخول.':e2.code=='email_not_confirmed'?'الحساب يحتاج تفعيل. (للمسؤول: عطّل Confirm email في Supabase)':e2.message||'صار خطأ، جرّب مرة ثانية.')}};
- setTimeout(()=>{const x=$('#gnm')||$('#gph');x&&x.focus()},350)}
+   msg(e2.code=='invalid_credentials'?'الإيميل أو كلمة المرور غلط.':(e2.code=='user_already_exists'||e2.code=='email_exists')?'هذا الإيميل عنده حساب. سجّل دخول.':e2.code=='email_not_confirmed'?'أكّد إيميلك أول من الرسالة اللي وصلتك، وبعدها سجّل دخول.':e2.message||'صار خطأ، جرّب مرة ثانية.')}};
+ setTimeout(()=>{const x=$('#gnm')||$('#gem');x&&x.focus()},350)}
 function authUI(mode){showGate(mode=='up'?'up':'in')}
 
 function newPassUI(){open(`<h3>كلمة مرور جديدة</h3><label class="mut">كلمة المرور الجديدة</label><input id="np" type="password" autocomplete="new-password" dir="ltr" placeholder="8 أحرف أو أكثر"><div id="npw" class="neg" style="font-size:13px;margin:-6px 0 10px"></div><button class="btn" id="npg" style="width:100%">حفظ</button>`);
@@ -811,8 +819,8 @@ function newPassUI(){open(`<h3>كلمة مرور جديدة</h3><label class="mu
 async function signOut(wipe){clearTimeout(SBt);if(SBS&&+S._mod>(+S._pushed||0))await cloudPush().catch(()=>{});try{if(SBS)await fetch(SB.url+'/auth/v1/logout',{method:'POST',headers:{apikey:SB.key,Authorization:'Bearer '+SBS.access_token}})}catch(e){}
  SBS=null;sbSave();if(wipe){const pp=S.p;S=demo();S.p=pp?{av:pp.av,acc:pp.acc,bg:pp.bg,fs:pp.fs,cur:pp.cur}:undefined;S._mod=0;try{localStorage.setItem(K,JSON.stringify(S))}catch(e){}}
  if(S.p)S.p.guest=false;tab='home';render();showGate('home');toast(wipe?'تم تسجيل الخروج ومسح بياناتك من هذا الجهاز':'تم تسجيل الخروج')}
-function acctRows(row){if(!SBS)return row('☁️','سجّل دخول أو أنشئ حساب','برقم جوالك، وتدخل من أي جهاز','','data-e="acct"');
- const ph=(SBS.user.phone||(S.p&&S.p.phone)||'');return row('🔒',esc(SBS.user.name||(S.p&&S.p.name)||'حسابي'),ph?'<span dir="ltr">'+esc(ph.startsWith('+')&&!ph.includes(' ')?fmtPhone(ph.slice(1)):ph)+'</span> · بياناتك تتزامن تلقائيًا':'بياناتك تتزامن تلقائيًا','','data-e="sync"')+row('🔄','زامن الآن','','','data-e="sync"')+row('🚪','تسجيل الخروج','','','data-e="logout"')}
+function acctRows(row){if(!SBS)return row('☁️','سجّل دخول أو أنشئ حساب','وتدخل من أي جهاز وتلقى بياناتك','','data-e="acct"');
+ const ph=(SBS.user.phone||(S.p&&S.p.phone)||'');const em=/@phone\.sorra\.app$/.test(SBS.user.email||'')?'':(SBS.user.email||'');return row('🔒',esc(SBS.user.name||(S.p&&S.p.name)||'حسابي'),em?'<span dir="ltr">'+esc(em)+'</span>':ph?'<span dir="ltr">'+esc(ph.startsWith('+')&&!ph.includes(' ')?fmtPhone(ph.slice(1)):ph)+'</span>':'بياناتك تتزامن تلقائيًا','','data-e="sync"')+row('🔄','زامن الآن','','','data-e="sync"')+row('🚪','تسجيل الخروج','','','data-e="logout"')}
 function logoutUI(){open(`<h3>تسجيل الخروج</h3><p class="mut" style="line-height:1.8">بياناتك محفوظة في حسابك، وترجع لك أول ما تسجّل دخول من أي جهاز.</p><button class="btn" id="lo1" style="width:100%">تسجيل الخروج</button><button class="btn s dg" id="lo2" style="width:100%;margin-top:8px">خروج ومسح بياناتي من هذا الجهاز</button><p class="mut" style="font-size:12.5px">اختر المسح إذا الجهاز مو لك.</p>`);
  $('#lo1').onclick=()=>{close();signOut(false)};$('#lo2').onclick=()=>{close();signOut(true)}}
 
