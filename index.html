@@ -761,10 +761,11 @@ function autoCapture(){let q;try{q=new URLSearchParams(location.search)}catch(e)
  setTimeout(()=>toastUndo('✓ سجّلت '+fmt(amt)+' · '+(mer||cat(c)[2]),()=>{S.tx=S.tx.filter(t=>t.id!==id);save();render();toast('تم التراجع')}),wait)}
 /* ===== bank SMS (Al Rajhi format) → transaction ===== */
 function parseBankSMS(raw){const t=AR_DIG(String(raw||'')).replace(/[\u061C\u200E\u200F\u202A-\u202E\u2066-\u2069]/g,'').replace(/\r/g,''),L=t.split('\n').map(x=>x.trim()).filter(Boolean),n=normA(t);
- if(/رمز|otp|تحقق|كلمه المرور|لا تشارك/i.test(n))return null;
+ if(/رمز|otp|تحقق|كلمه المرور|لا تشارك/i.test(n))return{type:'skip'};
  const am=t.match(/(?:SAR|SR|ر\.?\s?س)\s*:?\s*([\d,]+(?:\.\d+)?)/i)||t.match(/مبلغ\s*:?\s*([\d,]+(?:\.\d+)?)/);if(!am)return null;const amount=parseAmt(am[1]);if(!amount)return null;
  const after=pfx=>{const l=L.find(x=>x.startsWith(pfx));if(!l)return'';const v=l.slice(pfx.length).replace(/^[:\s]+/,'');return(v.includes(';')?v.split(';').pop():v).trim()};
  const who=v=>/^\d+$/.test(v)?'':v.slice(0,40),dig=pfx=>{const l=L.find(x=>x.startsWith(pfx));if(!l)return'';return(l.slice(pfx.length).replace(/^[:\s]+/,'').split(';')[0].match(/\d{3,}/)||[''])[0]};
+ if(/بين حساباتك|بين حساباتي|بين حسابات/.test(n))return{type:'own',amount,from:dig('من'),to:dig('الى')||dig('إلى')||dig('لـ')};
  if(/شراء|مشتريات|pos|purchase/i.test(n)){const m=who(after('لـ')||after('لدى')||after('من'));return{type:'exp',amount,merchant:m,category:guessCat(m)||'other',apple:/ابل باي|apple pay/i.test(n)}}
  if(/استرداد|مرتجع|refund/i.test(n))return{type:'inc',amount,category:'دخل آخر',merchant:'استرداد'};
  if(/سحب/.test(n))return{type:'exp',amount,merchant:'سحب نقدي',category:'other'};
@@ -779,22 +780,24 @@ async function apEnsureToken(fresh){if(!SBS)throw{code:'no_session',message:'س�
 let APBUSY=false;
 async function apSync(quiet){if(!SBS||APBUSY)return 0;APBUSY=true;try{
  let rows;try{rows=await sbFetch('/rest/v1/ap_inbox?select=id,amount,merchant,raw,created_at&order=id.asc&limit=200',{method:'GET'},true)||[]}catch(e){if(e.status!=400)throw e;rows=await sbFetch('/rest/v1/ap_inbox?select=id,amount,merchant,created_at&order=id.asc&limit=200',{method:'GET'},true)||[]}if(!rows.length)return 0;
- const have=new Set(S.tx.filter(t=>t.apId).map(t=>t.apId));let n=0,sumA=0,ap=(S.p&&S.p.ap&&S.p.ap.since)?Object.assign({},S.p.ap):{since:Date.now(),count:0};
+ const have=new Set(S.tx.filter(t=>t.apId).map(t=>t.apId));let unread=0,n=0,sumA=0,ap=(S.p&&S.p.ap&&S.p.ap.since)?Object.assign({},S.p.ap):{since:Date.now(),count:0};
  rows.forEach(r=>{if(have.has(r.id))return;const d=new Date(r.created_at),hm=String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0'),base={date:lf(d),time:hm,auto:1,at:d.getTime(),apId:r.id};
   let tx=null;
-  if(r.merchant=='sms'&&r.raw){const p=parseBankSMS(r.raw);if(!p)return;const main=mainAcc(),mine=(accByDigits(p.mine)||{}).id||main,oth=accByDigits(p.other),own=oth&&oth.id!=mine;
+  if(r.merchant=='sms'&&r.raw){const p=parseBankSMS(r.raw);if(p&&p.type=='skip')return;if(!p){S.apUnread=[{raw:String(r.raw).slice(0,400),at:d.getTime()}].concat(S.apUnread||[]).slice(0,20);unread++;return}
+   if(p.type=='own'){const banks=accts(true).filter(a=>a.type=='bank'),learn=(dg,ex)=>{const l4=String(dg||'').slice(-4),c=/^\d{4}$/.test(l4)&&banks.find(a=>!a.last4&&a.id!=ex);if(c){c.last4=l4;return c}return null};let f=accByDigits(p.from),t=accByDigits(p.to);if(!t)t=learn(p.to,f&&f.id);if(!f)f=learn(p.from,t&&t.id);if(!f)f=banks.find(a=>a.id!=(t&&t.id))||accById(mainAcc());if(!t)t=banks.find(a=>a.id!=f.id)||accById(mainAcc());if(!f||!t||f.id==t.id)return;tx=Object.assign(base,{type:'move',from:f.id,to:t.id,amount:p.amount,note:'',src:'sms'})}
+   else{const main=mainAcc(),mine=(accByDigits(p.mine)||{}).id||main,oth=accByDigits(p.other),own=oth&&oth.id!=mine;
    if(p.type=='exp')tx=Object.assign(base,{type:'exp',acc:main,amount:p.amount,category:p.category,pay:PAY[0],note:p.merchant,src:'sms'});
    else if(p.type=='inc')tx=Object.assign(base,{type:'inc',acc:mine,amount:p.amount,category:p.category,pay:PAY[0],note:p.merchant=='راتب'?'':p.merchant,src:'sms'});
    else if(p.type=='transfer'&&own)tx=Object.assign(base,{type:'move',from:p.dir=='out'?mine:oth.id,to:p.dir=='out'?oth.id:mine,amount:p.amount,note:'',src:'sms'});
-   else if(p.type=='transfer')tx=Object.assign(base,{type:'transfer',acc:mine,dir:p.dir,amount:p.amount,party:p.party||'',mergeCat:'',pay:'🔄 تحويل',note:'',src:'sms'})}
+   else if(p.type=='transfer')tx=Object.assign(base,{type:'transfer',acc:mine,dir:p.dir,amount:p.amount,party:p.party||'',mergeCat:'',pay:'🔄 تحويل',note:'',src:'sms'})}}
   else{const amt=parseAmt(r.amount);if(!amt)return;const mer=String(r.merchant||'').trim().slice(0,60);tx=Object.assign(base,{type:'exp',acc:accOf({pay:PAY[0]}),amount:amt,category:guessCat(mer)||'other',pay:PAY[0],note:mer,src:'ap'})}
   if(!tx)return;
   if(tx.type=='move'&&S.tx.some(x=>x.type=='move'&&x.auto&&x.from==tx.from&&x.to==tx.to&&Math.abs(x.amount-tx.amount)<.01&&Math.abs((x.at||0)-tx.at)<10*60000))return;
   if(tx.type=='exp'&&S.tx.some(x=>x.auto&&x.type=='exp'&&(x.src||'ap')!=tx.src&&Math.abs(x.amount-tx.amount)<.01&&Math.abs((x.at||0)-tx.at)<5*60000))return;
   S.tx.push(Object.assign({id:S.nid++},tx));n++;if(isSpend(tx))sumA+=tx.amount;ap.count=(ap.count||0)+1;ap.last=Math.max(ap.last||0,d.getTime())});
- if(n){S.p=S.p||{};S.p.ap=ap;save()}
+ if(n){S.p=S.p||{};S.p.ap=ap}if(n||unread)save();
  await sbFetch('/rest/v1/ap_inbox?id=in.('+rows.map(r=>r.id).join(',')+')',{method:'DELETE',headers:{Prefer:'return=minimal'}},true).catch(()=>{});
- if(n){render();if(!quiet)toast('✓ سجّلت '+n+(n==1?' عملية':' عمليات')+' تلقائيًا'+(sumA?' · صرف '+fmt(sumA):''))}return n}
+ if(n){render();if(!quiet)toast('✓ سجّلت '+n+(n==1?' عملية':' عمليات')+' تلقائيًا'+(sumA?' · صرف '+fmt(sumA):'')+(unread?' · '+unread+' رسالة ما قدرت أقرأها':''))}else if(unread&&!quiet)toast(unread+' رسالة من البنك ما قدرت أقرأها، شوفها في صفحة الربط');return n}
  catch(e){if(!quiet&&e.code!='network')toast(e.status==404||/ap_inbox/.test(e.message||'')?'شغّل كود Apple Pay في Supabase أول':'تعذر جلب عمليات Apple Pay');return 0}finally{APBUSY=false}}
 
 /* ===== Apple Pay link status + guided setup ===== */
@@ -840,12 +843,13 @@ function autoUI(){const st=apState(),web=apWeb(),link=apLink();
  if(st){const L=S.tx.filter(t=>t.auto).sort((a,b)=>(b.at||0)-(a.at||0)||b.id-a.id).slice(0,5);
   open(`<h3>Apple Pay</h3><div class="apstat ok"><span class="apdot"></span><div><b>مربوط</b><small>من ${formatDate(lf(new Date(st.since)))} · سجّل ${st.count||0} عملية تلقائيًا</small></div></div>
 <div class="sechd" style="margin-top:18px"><h2 style="font-size:16px">آخر الرسائل</h2></div>${L.length?`<div class="glass tlist">${L.map(t=>`<div class="txr"><span class="ic">${cat(t.category)[1]}</span><div class="grow"><b>${esc(t.note||cat(t.category)[2])}</b><div class="mut">${fmtWhen(t.at)}</div></div><span class="amt2 neg">−${fmt(t.amount)}</span></div>`).join('')}</div>`:'<p class="mut">ما وصلت عمليات بعد.</p>'}
-<div style="margin-top:16px">${copy}</div><button class="btn s" id="aref" style="width:100%;margin-top:8px">جلب العمليات الجديدة الآن</button><button class="btn s" id="ahow" style="width:100%;margin-top:8px">طريقة الربط</button>${S.p&&S.p.apTok?'<button class="btn s" id="anew" style="width:100%;margin-top:8px">رمز جديد</button>':''}<button class="btn s dg" id="aoff" style="width:100%;margin-top:8px">فك الربط</button>`);
+<div style="margin-top:16px">${copy}</div>${unreadHTML()}<button class="btn s" id="aref" style="width:100%;margin-top:8px">جلب العمليات الجديدة الآن</button><button class="btn s" id="ahow" style="width:100%;margin-top:8px">طريقة الربط</button>${S.p&&S.p.apTok?'<button class="btn s" id="anew" style="width:100%;margin-top:8px">رمز جديد</button>':''}<button class="btn s dg" id="aoff" style="width:100%;margin-top:8px">فك الربط</button>`);
   $('#ahow').onclick=()=>{open(`<h3>طريقة الربط</h3>${mtabs}${tutHTML()}${copy}`);tutRun();autoBind()};
   $('#aoff').onclick=()=>{if(!confirm('فك الربط؟ احذف الأتمتة من تطبيق الاختصارات بعد، وإلا بترجع تتسجل العمليات.'))return;setP({ap:null});close();toast('تم فك الربط');render()}}
- else{open(`<h3>اربط Apple Pay الآن</h3><div class="apstat no"><span class="apdot"></span><div><b>غير مربوط</b><small>ادفع طول اليوم، وتلقى عملياتك مسجّلة لما تفتح صُرة</small></div></div>${mtabs}${tutHTML()}${copy}<p class="mut" style="font-size:12.5px;line-height:1.8;margin:12px 0 0">يلتقط الدفع باللمس بـ Apple Pay فقط. التصنيف يطلع من اسم المحل، وتقدر تعدّل أو تحذف أي عملية.</p>`);tutRun()}
+ else{open(`<h3>اربط Apple Pay الآن</h3><div class="apstat no"><span class="apdot"></span><div><b>غير مربوط</b><small>ادفع طول اليوم، وتلقى عملياتك مسجّلة لما تفتح صُرة</small></div></div>${unreadHTML()}${mtabs}${tutHTML()}${copy}<p class="mut" style="font-size:12.5px;line-height:1.8;margin:12px 0 0">يلتقط الدفع باللمس بـ Apple Pay فقط. التصنيف يطلع من اسم المحل، وتقدر تعدّل أو تحذف أي عملية.</p>`);tutRun()}
  autoBind()}
-function autoBind(){document.querySelectorAll('[data-apm]').forEach(b=>b.onclick=()=>{APM=b.dataset.apm;const how=$('#sh').innerText.includes('طريقة الربط')&&apState();autoUI();if(how)$('#ahow').click()});document.querySelectorAll('[data-cp]').forEach(b=>b.onclick=async()=>{const i=$('#'+b.dataset.cp);try{await navigator.clipboard.writeText(i.value);toast('✓ نسخت')}catch(e){i.select();toast('حدد النص وانسخه')}});
+function unreadHTML(){const U=S.apUnread||[];return U.length?`<details class="glass card" style="margin-top:12px"><summary>رسائل ما قدرت أقرأها (${U.length})</summary><p class="mut" style="font-size:12.5px;margin:8px 0">صيغتها غير معروفة، فما انسجلت. تقدر تضيفها يدويًا من زر +.</p>${U.map(u=>`<div class="trow" style="display:block"><div class="mut" style="font-size:12px">${fmtWhen(u.at)}</div><div style="white-space:pre-wrap;font-size:13.5px">${esc(u.raw)}</div></div>`).join('')}<button class="btn s" id="uclr" style="width:100%;margin-top:8px">مسح القائمة</button></details>`:''}
+function autoBind(){const uc=$('#uclr');if(uc)uc.onclick=()=>{S.apUnread=[];save();autoUI()};document.querySelectorAll('[data-apm]').forEach(b=>b.onclick=()=>{APM=b.dataset.apm;const how=$('#sh').innerText.includes('طريقة الربط')&&apState();autoUI();if(how)$('#ahow').click()});document.querySelectorAll('[data-cp]').forEach(b=>b.onclick=async()=>{const i=$('#'+b.dataset.cp);try{await navigator.clipboard.writeText(i.value);toast('✓ نسخت')}catch(e){i.select();toast('حدد النص وانسخه')}});
  const g=$('#apgen');if(g)g.onclick=async()=>{g.disabled=true;g.textContent='لحظة…';try{await apEnsureToken();autoUI()}catch(e){g.disabled=false;g.textContent='جهّز بيانات الربط';toast(/ap_tokens/.test(e.message||'')||e.status==404?'شغّل كود Apple Pay في Supabase أول':e.message||'تعذر التجهيز')}};
  const rf=$('#aref');if(rf)rf.onclick=async()=>{rf.disabled=true;const n=await apSync();rf.disabled=false;if(!n)toast('ما فيه عمليات جديدة');autoUI()};
  const nt=$('#anew');if(nt)nt.onclick=async()=>{if(!confirm('رمز جديد؟ لازم تحدّث p_token في الاختصار بعدها.'))return;try{await apEnsureToken(true);toast('✓ سوّيت رمز جديد');autoUI()}catch(e){toast(e.message||'تعذر')}}}
