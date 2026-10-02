@@ -390,6 +390,8 @@ details.more>summary::-webkit-details-marker{display:none}details.more[open]>sum
 <div id="toast" class="glass"></div>
 <svg width="0" height="0" style="position:absolute"><defs><linearGradient id="gr" x1="0" x2="1"><stop offset="0" style="stop-color:var(--ac2)"/><stop offset="1" style="stop-color:var(--ac)"/></linearGradient><linearGradient id="grb" x1="0" x2="1"><stop offset="0" stop-color="#a8854a"/><stop offset="1" stop-color="#e2c282"/></linearGradient></defs></svg>
 <script>
+/* internal error log: message only, never user data or keys */
+function logErr(e,ctx){try{console.warn('[sorra]'+(ctx?' '+ctx:''),e&&e.message?e.message:String(e))}catch(_){}}
 /* ===== dates: local-time keys (YYYY-MM-DD), one source for the whole app ===== */
 function lf(x){return x.getFullYear()+'-'+String(x.getMonth()+1).padStart(2,'0')+'-'+String(x.getDate()).padStart(2,'0')}
 /* local-time date keys: one source for 'today' across the app */
@@ -431,7 +433,7 @@ T.push({id:++id,type:'inc',amount:5000,category:'راتب',pay:'🏦 تحويل'
 [[85,2],[120,5],[95,9],[140,14],[180,20]].map(x=>e('food',x[0],x[1],0));[[150,4],[150,15]].map(x=>e('fuel',x[0],x[1],0));[[90,3],[110,11],[80,19]].map(x=>e('groc',x[0],x[1],1));[[120,7],[100,16]].map(x=>e('fun',x[0],x[1],0));[[60,6,'Netflix'],[70,12,'اشتراكات'],[50,18,'']].map(x=>e('subs',x[0],x[1],0,x[2]));e('shop',160,10,0);
 T.push({id:++id,type:'exp',amount:525,category:'food',pay:PAY[0],date:dd(pd,10),note:''},{id:++id,type:'exp',amount:900,category:'groc',pay:PAY[0],date:dd(pd,12),note:''});
 return{demo:1,nid:id+1,tx:T,budgets:{food:600,fuel:400,groc:800,fun:300,shop:400},goals:[{n:'أبي أشتري آيفون',ic:'📱',t:4000,c:1750},{n:'صندوق طوارئ',ic:'💰',t:10000,c:3000},{n:'سفر',ic:'✈️',t:6000,c:900}],subs:[{n:'Netflix',p:45,d:6,cy:'شهري',start:dd(pd,6)},{n:'YouTube',p:23,d:12,cy:'شهري',start:dd(pd,12)},{n:'Spotify',p:22,d:15,cy:'شهري',start:dd(pd,15)},{n:'PlayStation Plus',p:60,d:20,cy:'شهري',start:dd(pd,20)},{n:'iCloud',p:37,d:25,cy:'شهري',start:dd(pd,25)}],installments:[]}}
-let S;try{S=JSON.parse(localStorage.getItem(K))}catch(e){}if(!S||!Array.isArray(S.tx))S=demo();S.goals=S.goals||[];S.subs=S.subs||[];S.budgets=S.budgets||{};accts(true);S.tx.forEach(t=>{if(t.type=='exp'&&t.category=='other'&&/^قسط /.test(t.note||''))t.category='inst'});S.installments=S.installments||[];
+let S;try{S=JSON.parse(localStorage.getItem(K))}catch(e){logErr(e)}if(!S||!Array.isArray(S.tx))S=demo();S.goals=S.goals||[];S.subs=S.subs||[];S.budgets=S.budgets||{};accts(true);S.tx.forEach(t=>{if(t.type=='exp'&&t.category=='other'&&/^قسط /.test(t.note||''))t.category='inst'});S.installments=S.installments||[];
 const save=()=>{try{S._mod=Date.now();localStorage.setItem(K,JSON.stringify(S));if(typeof cloudQueue=='function')cloudQueue();return true}catch(e){return false}};
 const M=t=>inCycle(t.date,CYO),sum=a=>a.reduce((s,t)=>s+t.amount,0);
 const effCat=t=>t.type=='transfer'?(t.dir=='out'?t.mergeCat:''):t.category;
@@ -515,7 +517,7 @@ return A}
 async function exportCSV(){const q=x=>{let s=String(x);if(/^[=+\-@]/.test(s)&&isNaN(+s))s="'"+s;return'"'+s.replace(/"/g,'""')+'"'},
 rows=[['التاريخ','النوع','التصنيف','المبلغ','طريقة الدفع','ملاحظة']].concat(S.tx.slice().sort((a,b)=>a.date.localeCompare(b.date)).map(t=>[t.date,t.type=='exp'?'مصروف':'دخل',t.type=='exp'?cat(t.category)[2]:t.category,t.amount,t.pay,t.note])),
 csv='\ufeff'+rows.map(r=>r.map(q).join(',')).join('\n');
-let d=null;try{d=await claude.use('downloads')}catch(e){}
+let d=null;try{d=await claude.use('downloads')}catch(e){logErr(e)}
 if(d){try{await d.save({filename:'sorra.csv',data:csv});toast('✓ تم تجهيز الملف')}catch(e){if(!e||e.code!='declined')toast('تعذر حفظ الملف')}}
 else{try{await navigator.clipboard.writeText(csv);toast('📋 نُسخ CSV، الصقه في إكسل')}catch(e){open('<h3>CSV</h3><textarea readonly style="width:100%;height:220px">'+esc(csv)+'</textarea>')}}}
 
@@ -530,7 +532,7 @@ ${T('الميزانية',Object.entries(S.budgets).map(([k,l])=>`<tr><td>${cat(k
 ${T('الأهداف',S.goals.map(g=>`<tr><td>${esc(g.ic)} ${esc(g.n)}</td><td>${f(g.c)} / ${f(g.t)}</td><td>${Math.round(g.c/g.t*100)}%</td></tr>`))}
 ${T('الاشتراكات',S.subs.map(s=>`<tr><td>${esc(s.n)}</td><td>${f(s.p)}</td><td>${s.cy}</td></tr>`))}
 <p style="color:#888;font-size:12px;margin-top:30px">${S.demo?'بيانات تجريبية. ':''}للحفظ كملف PDF: افتح هذا الملف ثم اطبعه واختر "حفظ كـ PDF".</p></body></html>`}
-async function exportReport(){let d=null;try{d=await claude.use('downloads')}catch(e){}if(!d){toast('حفظ التقرير غير متاح هنا');return}try{await d.save({filename:'sorra-report-'+ym+'.html',data:reportHTML()});toast('✓ افتح الملف واطبعه كـ PDF')}catch(e){if(!e||e.code!='declined')toast('تعذر حفظ التقرير')}}
+async function exportReport(){let d=null;try{d=await claude.use('downloads')}catch(e){logErr(e)}if(!d){toast('حفظ التقرير غير متاح هنا');return}try{await d.save({filename:'sorra-report-'+ym+'.html',data:reportHTML()});toast('✓ افتح الملف واطبعه كـ PDF')}catch(e){if(!e||e.code!='declined')toast('تعذر حفظ التقرير')}}
 
 function parseBank(txt,ne){const O=[],KW=[['food',/مطعم|كافي|برجر|بيتزا|شاورما|مقهى|coffee|cafe|starbucks|mcdonald|kfc|burger|hungerstation|jahez|هنقر|جاهز/i],['fuel',/بنزين|وقود|أدنوك|ادنوك|ساسكو|أرامكو|petrol|adnoc|fuel|aldrees|الدريس/i],['groc',/بنده|تميمي|هايبر|كارفور|لولو|carrefour|lulu|panda|tamimi|supermarket|بقالة|مقاضي/i],['subs',/netflix|spotify|youtube|شاهد|shahid|icloud|playstation|اشتراك|subscription/i],['shop',/amazon|noon|نون|شي إن|shein|أمازون|mall|مول/i],['health',/صيدلية|مستشفى|عيادة|pharmacy|nahdi|النهدي|دواء/i],['trip',/طيران|airline|booking|فندق|hotel|flight/i]];
 txt.split(/\r?\n/).slice(0,600).forEach(l=>{if(!l.trim())return;const c=l.split(/[\t;,](?=(?:[^"]*"[^"]*")*[^"]*$)/).map(x=>x.replace(/^"|"$/g,'').trim()),N=[],D=[];let d=null;
@@ -540,11 +542,11 @@ O.push({type:exp?'exp':'inc',amount:Math.abs(v),date:d,category:exp?(KW.find(k=>
 function importUI(){open(`<h3>📥 استيراد كشف حساب</h3>${S.demo?'<p class="mut">ما زالت البيانات التجريبية موجودة. اضغط «ابدأ بياناتي» في الرئيسية أولًا لو تبي بياناتك فقط.</p>':''}<p class="mut">الصق صفوف الكشف (تاريخ، وصف، مبلغ) من ملف CSV أو إكسل. لا يُرسل شيء لأي جهة، ويُصنَّف كل مصروف تلقائيًا حسب الوصف.</p><textarea id="im" rows="7" style="width:100%;border-radius:14px;padding:10px;font:inherit;background:var(--g);color:var(--tx);border:1px solid var(--gb);margin-bottom:10px" placeholder="2026-09-20,ستاربكس,-32.50"></textarea><label class="mut">المبالغ السالبة تعني</label><select id="isg"><option value="1">مصروف (والموجبة دخل)</option><option value="0">دخل (والموجبة مصروف)</option></select><button class="btn" id="ig" style="width:100%">استيراد</button>`);
 $('#ig').onclick=()=>{const R=parseBank($('#im').value,$('#isg').value=='1');if(!R.length){toast('ما لقيت عمليات صالحة');return}let k=0;R.slice(0,500).forEach(r=>{if(S.tx.some(t=>t.date==r.date&&t.amount==r.amount&&t.type==r.type&&t.note==r.note))return;S.tx.push(Object.assign({id:S.nid++,pay:'💳 بطاقة'},r));k++});save();close();toast('✓ تم استيراد '+k+' عملية');render()}}
 const V={
-home(){const i=inc(),e=sum(exps()),r=i-e,hr=new Date().getHours(),nm=S.p&&S.p.name?esc(String(S.p.name).split(' ')[0]):'',pc=i?Math.min(100,Math.round(e/i*100)):0;let dt='',mn='';try{dt=new Date().toLocaleDateString('ar-SA-u-ca-gregory-nu-latn',{weekday:'long',day:'numeric',month:'long'});mn=new Date().toLocaleDateString('ar-SA-u-ca-gregory-nu-latn',{month:'long'})}catch(x){}
+home(){const i=inc(),e=sum(exps()),cm=cycleMoney(),r=cm.now,hr=new Date().getHours(),nm=S.p&&S.p.name?esc(String(S.p.name).split(' ')[0]):'',pc=cm.avail>0?Math.min(100,Math.round(e/cm.avail*100)):(e?100:0);let dt='',mn='';try{dt=new Date().toLocaleDateString('ar-SA-u-ca-gregory-nu-latn',{weekday:'long',day:'numeric',month:'long'});mn=new Date().toLocaleDateString('ar-SA-u-ca-gregory-nu-latn',{month:'long'})}catch(x){logErr(x)}
 return`<span class="kick">${dt}</span><h1>${hr>=4&&hr<12?'صباح الخير':'مساء الخير'}${nm?'، '+nm:''}</h1>
 <div class="notes">${S.demo?'<div class="demo"><span>تشوف الحين بيانات تجريبية.</span><button class="btn s" id="clr">ابدأ بياناتي</button></div>':''}${!(S.p&&+S.p.inc>0)?'<div class="demo"><span>حدد دخلك الشهري ليضاف راتبك تلقائيًا.</span><button class="btn s" id="setInc">تحديد</button></div>':''}</div>
-${cycNav()}<section class="bal"><span class="lbl">${CYO==0?'المتبقي لك في هذه الدورة':'المتبقي في هذه الدورة'}</span><span class="bn" data-n="${r}"></span><span class="bs">من دخل ${fmt(i)}</span>
-<div class="track bar"><i data-w="${pc}"></i></div><div class="leg"><span>صرفت <b>${fmt(e)}</b></span><span>${pc}% من دخلك</span></div></section>
+${cycNav()}<section class="bal"><span class="lbl">${CYO==0?'رصيدك المتاح الحين':'رصيدك بنهاية هذه الدورة'}</span><span class="bn" data-n="${r}"></span><span class="bs">بدأت الدورة بـ ${fmt(cm.start)} + دخل ${fmt(i)}${cm.save?` · في الادخار ${fmt(cm.save)}`:''}</span>
+<div class="track bar"><i data-w="${pc}"></i></div><div class="leg"><span>صرفت <b>${fmt(e)}</b></span><span>${pc}% من المتاح لك</span></div></section>
 ${CYO==0?`<div class="stats3"><div><span>الدخل</span><b>${fmt(i)}</b></div><div><span>الصرف</span><b>${fmt(e)}</b></div><div><span>المتاح اليوم</span><b>${safeCalc().ok?fmt(safe()):'—'}</b></div></div>`:''}
 <div class="qact"><button class="qbtn pri" data-add="exp"><i>${IC.plus}</i>مصروف</button><button class="qbtn" data-add="inc"><i>${IC.inc}</i>دخل</button><button class="qbtn" data-add="transfer"><i>${IC.xfer}</i>تحويل</button><button class="qbtn" id="rcpQ"><i>${IC.cam}</i>فاتورة</button></div>
 <div class="ins"><button class="insc" id="sty">${IC.month}ملخص الدورة</button><button class="insc" id="wk">${IC.week}ملخص الأسبوع</button><button class="insc" id="dec">${IC.dec}مركز القرارات</button><button class="insc" data-go="ai">${IC.spark}اسأل فلوسي AI</button></div>
@@ -586,8 +588,8 @@ function achHome(){const A=ach(winOf(cycStart(),lf(now))),n=A.filter(a=>a[2]).le
 function autoPayIncome(){const amt=+(S.p&&S.p.inc)||0;if(!(amt>0))return;const cs=cycStart();if(S.p&&S.p.lastAutoInc===cs)return;const has=S.tx.some(t=>t.type=='inc'&&t.date==cs&&t.note=='إضافة تلقائية عند نزول الراتب');
 if(!has){S.tx.push({id:S.nid++,type:'inc',amount:amt,category:'راتب',pay:'🏦 تحويل',date:cs,note:'إضافة تلقائية عند نزول الراتب'});toast('💰 تمت إضافة راتبك تلقائيًا: '+fmt(amt))}
 setP({lastAutoInc:cs})}
-function payday(){const k=nextPayIn(),W=winOf(cycStart(),todayKey()),r=Math.max(0,W.I-W.e);
-return`<div class="glass card"><div style="display:flex;justify-content:space-between;align-items:center"><b>💵 يوم الراتب</b><span class="mut">يوم ${payDay()} من كل شهر ميلادي</span></div>${k==0?'<p>🎉 اليوم نزل الراتب!</p>':`<div class="num" style="font-size:30px">${k} <span style="font-size:16px">يوم</span></div><p class="mut" style="margin:4px 0 0">تقدر تصرف حوالي <b>${fmt(r/k)}</b> يوميًا من المتبقي لين ينزل.</p>`}</div>`}
+function payday(){const k=nextPayIn(),sc=safeCalc();
+return`<div class="glass card"><div style="display:flex;justify-content:space-between;align-items:center"><b>💵 يوم الراتب</b><span class="mut">يوم ${payDay()} من كل شهر</span></div>${k==0?'<p>🎉 اليوم نزل الراتب!</p>':`<div class="num" style="font-size:30px">${k} <span style="font-size:16px">يوم</span></div><p class="mut" style="margin:4px 0 0">تقدر تصرف حوالي <b>${fmt(sc.perDay)}</b> يوميًا لين ينزل.</p>`}</div>`}
 /* summaries */
 let SM={k:'m',a:'',b:''};
 const wk0=d=>{const x=new Date(d+'T00:00:00');x.setDate(x.getDate()-x.getDay());return lf(x)};
@@ -713,7 +715,7 @@ function trashPush(kind,data){S.trash=S.trash||[];S.trash.unshift({id:S.nid++,ki
 function trashRestore(id){S.trash=S.trash||[];const i=S.trash.findIndex(x=>x.id==id);if(i<0)return;const it=S.trash[i];S.trash.splice(i,1);
 if(it.kind=='tx')S.tx.push(it.data);else if(it.kind=='goal')S.goals.push(it.data);else if(it.kind=='budget')S.budgets[it.data.key]=it.data.val;else if(it.kind=='sub')S.subs.push(it.data);else if(it.kind=='doc'){S.docs=S.docs||[];S.docs.push(it.data)}
 save()}
-function trashPurge(id){const it=(S.trash||[]).find(x=>x.id==id);if(it&&it.kind=='doc'&&it.data&&it.data.fk)FS.del(it.data.fk).catch(()=>{});S.trash=(S.trash||[]).filter(x=>x.id!=id);save()}
+function trashPurge(id){const it=(S.trash||[]).find(x=>x.id==id);if(it&&it.kind=='doc'&&it.data&&it.data.fk)FS.del(it.data.fk).catch(logErr);S.trash=(S.trash||[]).filter(x=>x.id!=id);save()}
 function trashUI(){S.trash=S.trash||[];open(`<h3>سلة المحذوفات</h3>${S.trash.length?`<p class="mut">تقدر تستعيد أي عنصر، أو تحذفه نهائيًا.</p>${S.trash.map(it=>`<div class="trow"><span style="font-size:20px">${trashIcon(it.kind)}</span><div class="grow"><b>${trashLabel(it)}</b><div class="mut" style="font-size:12px">حُذف ${it.at}</div></div><button class="ib" data-tr="${it.id}" aria-label="استعادة" style="width:36px;height:36px">↩️</button><button class="ib sm" data-tp="${it.id}" aria-label="حذف نهائي" >${IC.trash}</button></div>`).join('')}`:'<p class="mut">السلة فارغة.</p>'}`);
 document.querySelectorAll('[data-tr]').forEach(b=>b.onclick=()=>{trashRestore(b.dataset.tr);toast('↩️ تمت الاستعادة');trashUI()});
 document.querySelectorAll('[data-tp]').forEach(b=>b.onclick=()=>{const id=b.dataset.tp;conf('🗑️ حذف نهائي','هذا العنصر بيُحذف نهائيًا ولا يمكن استرجاعه. متأكد؟',()=>{trashPurge(id);trashUI()},'نعم، احذفه نهائيًا','تراجع')})}
@@ -750,12 +752,12 @@ function parseAmt(v){const m=AR_DIG(String(v||'')).replace(/[^\d.,]/g,' ').match
 function autoCapture(){let q;try{q=new URLSearchParams(location.search)}catch(e){return}if(!q.has('tx')&&!q.has('add'))return;
  let amt,mer='',ck='';
  if(q.has('tx')){const p=q.get('tx').split('|');amt=parseAmt(p[0]);mer=(p[1]||'').trim();ck=(p[2]||'').trim()}else{amt=parseAmt(q.get('add'));mer=(q.get('m')||'').trim();ck=(q.get('c')||'').trim()}
- try{history.replaceState(null,'',location.pathname+location.hash)}catch(e){}
+ try{history.replaceState(null,'',location.pathname+location.hash)}catch(e){logErr(e)}
  const wait=$('#splash')?2600:400;
  if(!amt){setTimeout(()=>toast('ما قدرت أقرأ مبلغ الدفعة'),wait);return}
- mer=mer.slice(0,60);const key=amt+'|'+mer;let last=null;try{last=JSON.parse(localStorage.getItem('wf_auto')||'null')}catch(e){}
+ mer=mer.slice(0,60);const key=amt+'|'+mer;let last=null;try{last=JSON.parse(localStorage.getItem('wf_auto')||'null')}catch(e){logErr(e)}
  if(last&&last.k==key&&Date.now()-last.t<180000){setTimeout(()=>toast('هذي الدفعة مسجّلة من قبل'),wait);return}
- try{localStorage.setItem('wf_auto',JSON.stringify({k:key,t:Date.now()}))}catch(e){}
+ try{localStorage.setItem('wf_auto',JSON.stringify({k:key,t:Date.now()}))}catch(e){logErr(e)}
  const c=CATS.some(x=>x[0]==ck)?ck:(guessCat(mer)||'other'),id=S.nid++;
  const ap=(S.p&&S.p.ap&&S.p.ap.since)?S.p.ap:{since:Date.now(),count:0};S.tx.push({id,type:'exp',acc:accOf({pay:PAY[0]}),time:nowHM(),amount:amt,category:c,pay:PAY[0],date:todayKey(),note:mer,auto:1,at:Date.now()});setP({ap:{since:ap.since,count:(ap.count||0)+1,last:Date.now()}});save();render();
  setTimeout(()=>toastUndo('✓ سجّلت '+fmt(amt)+' · '+(mer||cat(c)[2]),()=>{S.tx=S.tx.filter(t=>t.id!==id);save();render();toast('تم التراجع')}),wait)}
@@ -796,7 +798,7 @@ async function apSync(quiet){if(!SBS||APBUSY)return 0;APBUSY=true;try{
   if(tx.type=='exp'&&S.tx.some(x=>x.auto&&x.type=='exp'&&(x.src||'ap')!=tx.src&&Math.abs(x.amount-tx.amount)<.01&&Math.abs((x.at||0)-tx.at)<5*60000))return;
   S.tx.push(Object.assign({id:S.nid++},tx));n++;if(isSpend(tx))sumA+=tx.amount;ap.count=(ap.count||0)+1;ap.last=Math.max(ap.last||0,d.getTime())});
  if(n){S.p=S.p||{};S.p.ap=ap}if(n||unread)save();
- await sbFetch('/rest/v1/ap_inbox?id=in.('+rows.map(r=>r.id).join(',')+')',{method:'DELETE',headers:{Prefer:'return=minimal'}},true).catch(()=>{});
+ await sbFetch('/rest/v1/ap_inbox?id=in.('+rows.map(r=>r.id).join(',')+')',{method:'DELETE',headers:{Prefer:'return=minimal'}},true).catch(logErr);
  if(n){render();if(!quiet)toast('✓ سجّلت '+n+(n==1?' عملية':' عمليات')+' تلقائيًا'+(sumA?' · صرف '+fmt(sumA):'')+(unread?' · '+unread+' رسالة ما قدرت أقرأها':''))}else if(unread&&!quiet)toast(unread+' رسالة من البنك ما قدرت أقرأها، شوفها في صفحة الربط');return n}
  catch(e){if(!quiet&&e.code!='network')toast(e.status==404||/ap_inbox/.test(e.message||'')?'شغّل كود Apple Pay في Supabase أول':'تعذر جلب عمليات Apple Pay');return 0}finally{APBUSY=false}}
 
@@ -854,6 +856,12 @@ function autoBind(){const uc=$('#uclr');if(uc)uc.onclick=()=>{S.apUnread=[];save
  const rf=$('#aref');if(rf)rf.onclick=async()=>{rf.disabled=true;const n=await apSync();rf.disabled=false;if(!n)toast('ما فيه عمليات جديدة');autoUI()};
  const nt=$('#anew');if(nt)nt.onclick=async()=>{if(!confirm('رمز جديد؟ لازم تحدّث p_token في الاختصار بعدها.'))return;try{await apEnsureToken(true);toast('✓ سوّيت رمز جديد');autoUI()}catch(e){toast(e.message||'تعذر')}}}
 
+/* ===== real balance: money carried over between cycles ===== */
+function isSaveAcc(a){return!!a&&(a.id=='save'||/ادخار|توفير/.test(a.name||''))}
+function spendAccts(){return accts().filter(a=>!isSaveAcc(a))}
+function dayBefore(k){const d=new Date(k+'T00:00:00');d.setDate(d.getDate()-1);return lf(d)}
+function balAt(upto,L){return r2((L||spendAccts()).reduce((s,a)=>s+accBal(a.id,upto),0))}
+function cycleMoney(o){o=o==null?CYO:o;const c=getFinancialCycle(o),end=o==0?null:c.end,start=balAt(dayBefore(c.start)),i=sum(S.tx.filter(t=>isIncomeTx(t)&&inCycle(t.date,o))),e=sum(S.tx.filter(t=>isSpend(t)&&inCycle(t.date,o))),now=balAt(end),save=r2(accts().filter(isSaveAcc).reduce((s,a)=>s+accBal(a.id,end),0));return{start,i,e,now,save,avail:r2(start+i)}}
 /* ===== money accounts: one source for real balances ===== */
 const ACCT={bank:['حساب بنكي','bank'],card:['بطاقة ائتمانية','card'],wallet:['محفظة','wallet'],other:['حساب آخر','coin']};
 function accts(all){S.accounts=S.accounts&&S.accounts.length?S.accounts:[{id:'bank',name:'الحساب الأساسي',type:'bank',bank:'الراجحي',last4:'',open:0},{id:'save',name:'حساب الادخار',type:'bank',bank:'الراجحي',last4:'',open:0}];return all?S.accounts:S.accounts.filter(a=>!a.hidden)}
@@ -942,7 +950,7 @@ function addMenu(){open(`<h3>إضافة عملية</h3><div class="addg">${[['ex
 function voicePreview(r){const a=accById(r.acc)||accById(accOf({pay:r.pay}));const row=(l,v)=>`<div class="trow"><span class="grow mut">${l}</span><b>${v}</b></div>`;
  open(`<h3>راجع قبل الحفظ</h3>${r.catSure?'':'<div class="demo"><span>ما تأكدت من التصنيف، راجعه قبل الحفظ.</span></div>'}<div class="glass tlist">${row('النوع',r.type=='inc'?'دخل':'مصروف')+row('المبلغ',fmt(r.amount))+row(r.type=='inc'?'نوع الدخل':'التصنيف',r.type=='inc'?esc(r.category):cat(r.category)[1]+' '+cat(r.category)[2])+row('الحساب',esc(a.name))+row('التاريخ',dayLabel(r.date))+row('الوقت',nowHM())+(r.note?row('الوصف',esc(r.note)):'')}</div>
 <button class="btn" id="vpS" style="width:100%;margin-top:14px">حفظ</button><button class="btn s" id="vpE" style="width:100%;margin-top:8px">تعديل التفاصيل</button>`);
- $('#vpS').onclick=()=>{S.tx.push({id:S.nid++,type:r.type,acc:a.id,amount:r.amount,category:r.category,pay:payOf(a.id),date:r.date,time:nowHM(),note:String(r.note||'').slice(0,80)});save();close(true);toast('✓ تمت إضافة '+fmt(r.amount));render()};
+ $('#vpS').onclick=()=>{if($('#vpS').disabled)return;$('#vpS').disabled=true;S.tx.push({id:S.nid++,type:r.type,acc:a.id,amount:r.amount,category:r.category,pay:payOf(a.id),date:r.date,time:nowHM(),note:String(r.note||'').slice(0,80)});save();close(true);toast('✓ تمت إضافة '+fmt(r.amount));render()};
  $('#vpE').onclick=()=>addTx(r.type,Object.assign({},r,{acc:a.id}))}
 /* ===== operations page: tabs, search, filters, sort ===== */
 function opsList(){const q=normA(String(flt.q||'').trim());return S.tx.filter(t=>{const d=t.date;
@@ -980,7 +988,7 @@ function txRow(t,withDate){if(t.type=='move')return moveRow(t,withDate);
  party=isT&&t.party?(t.dir=='out'?'إلى ':'من ')+t.party:'',title=t.note||(isT?(party||kind):catLbl),a=accById(accOf(t)),
  meta=[kind,t.note?(party||catLbl):(isT?catLbl:''),a?a.name:'',t.auto?(t.src=='sms'?'رسالة البنك':'Apple Pay'):'',withDate?dayLabel(t.date):'',t.time||''].filter(Boolean).join(' · '),cl=isT?'trf-b':(t.type=='exp'?'neg':'pos');
  return`<div class="txr ${isT?'trf':''}" data-ed="${t.id}" role="button" tabindex="0" aria-label="تعديل العملية"><span class="ic ${isT||t.type=='inc'?'icx':''}">${ic}</span><div class="grow"><b>${esc(title)}</b><div class="mut">${esc(meta)}</div></div><span class="amt2 ${cl}">${isSpend(t)?'−':'+'}${fmt(t.amount)}</span><button class="ib sm" data-del="${t.id}" aria-label="حذف">${IC.trash}</button></div>`}
-function moveRow(t,withDate){const f=accById(t.from),to=accById(t.to),meta=['بين حساباتي',(f?f.name:'؟')+' ← '+(to?to.name:'؟'),withDate?dayLabel(t.date):'',t.time||''].filter(Boolean).join(' · ');return`<div class="txr mv" data-ed="${t.id}" role="button" tabindex="0" aria-label="تعديل التحويل"><span class="ic icx">${IC.bank}</span><div class="grow"><b>${esc(t.note||'تحويل بين حساباتي')}</b><div class="mut">${esc(meta)}</div></div><span class="amt2 trf-b">${fmt(t.amount)}</span><button class="ib sm" data-del="${t.id}" aria-label="حذف">${IC.trash}</button></div>`}
+function moveRow(t,withDate){const f=accById(t.from),to=accById(t.to),meta=['من '+(f?f.name:'؟')+' إلى '+(to?to.name:'؟'),t.note||'',withDate?dayLabel(t.date):'',t.time||''].filter(Boolean).join(' · ');return`<div class="txr mv" data-ed="${t.id}" role="button" tabindex="0" aria-label="تعديل التحويل"><span class="ic icx">${IC.bank}</span><div class="grow"><b>تحويل بين حساباتك</b><div class="mut">${esc(meta)}</div></div><span class="amt2 trf-b">${fmt(t.amount)}</span><button class="ib sm" data-del="${t.id}" aria-label="حذف">${IC.trash}</button></div>`}
 
 /* ===== commitments due in the current cycle (subscriptions + installments) ===== */
 function upcoming(){const c=getFinancialCycle(0),L=[];
@@ -990,20 +998,19 @@ function upcoming(){const c=getFinancialCycle(0),L=[];
  (S.installments||[]).forEach(x=>{if(x.paid>=x.months)return;for(let k=0;x.paid+k<x.months;k++){const d=addMonths(x.firstDate,x.paid+k);if(d>c.end)break;L.push({kind:'inst',name:x.name,amount:+x.amount||0,date:d,late:d<todayKey()})}});
  return L.sort((a,b)=>a.date.localeCompare(b.date))}
 /* ===== "how much can I spend today" ===== */
-function safeCalc(){return at0(()=>{const c=getFinancialCycle(0),left=cycleLeft(0),incRec=sum(S.tx.filter(t=>isIncomeTx(t)&&inCycle(t.date,0))),incSet=+(S.p&&S.p.inc)||0,expectedInc=Math.max(incRec,incSet),pending=Math.max(0,expectedInc-incRec),
- spent=sum(S.tx.filter(t=>isSpend(t)&&inCycle(t.date,0))),U=upcoming(),commit=U.reduce((s,x)=>s+x.amount,0),saveT=expectedInc*sv()/100,available=expectedInc-spent,spendable=available-commit-saveT,missing=[];
- if(!expectedInc)missing.push('دخلك الشهري');
- return{ok:!missing.length,missing,perDay:Math.max(0,spendable/left),spendable,available,expectedInc,incRec,pending,spent,U,commit,saveT,left,c,over:spendable<0}})}
+function safeCalc(){return at0(()=>{const c=getFinancialCycle(0),left=cycleLeft(0),incRec=sum(S.tx.filter(t=>isIncomeTx(t)&&inCycle(t.date,0))),incSet=+(S.p&&S.p.inc)||0,expectedInc=Math.max(incRec,incSet),pending=Math.max(0,incSet-incRec),
+ spent=sum(S.tx.filter(t=>isSpend(t)&&inCycle(t.date,0))),bal=balAt(null),hasSave=accts().some(isSaveAcc),U=upcoming(),commit=U.reduce((s,x)=>s+x.amount,0),saveT=hasSave?0:Math.max(0,expectedInc*sv()/100),available=r2(bal+pending),spendable=r2(available-commit-saveT),missing=[];
+ if(!S.tx.length&&!incSet&&!bal)missing.push('دخلك الشهري أو رصيد حسابك');
+ return{ok:!missing.length,missing,perDay:Math.max(0,spendable/left),spendable,available,bal,hasSave,expectedInc,incRec,pending,spent,U,commit,saveT,left,c,over:spendable<0}})}
 function safe(){return safeCalc().perDay}
 function safeHow(){const k=safeCalc(),row=(l,v,cls)=>`<div class="trow"><span class="grow">${l}</span><b class="${cls||''}">${v}</b></div>`;
  if(!k.ok){open(`<h3>كيف حسبناها؟</h3><p class="mut" style="line-height:1.9">ما نقدر نحسبها بدقة الحين، ناقصنا: <b>${k.missing.join('، ')}</b>. ما نخترع رقم بدونها.</p><button class="btn" id="shI" style="width:100%">حدد دخلك الشهري</button>`);$('#shI').onclick=()=>{close();editSheet('inc')};return}
  open(`<h3>كيف حسبناها؟</h3><p class="mut" style="margin-top:-6px">لدورتك الحالية: ${cycleLabel(0)}</p><div class="glass tlist">
-${row('الدخل المتوقع للدورة',fmt(k.expectedInc))}${k.pending?`<div class="mut" style="font-size:12.5px;padding:0 0 8px">منه ${fmt(k.incRec)} وصلك، و${fmt(k.pending)} متوقع حسب دخلك الشهري</div>`:''}
-${row('− صرفك حتى الآن',fmt(k.spent),'neg')}${row('= المتاح',fmt(k.available))}
+${row('رصيدك الحالي'+(k.hasSave?' (بدون حساب الادخار)':''),fmt(k.bal))}${k.pending?row('+ دخل متوقع باقي هذي الدورة',fmt(k.pending),'pos'):''}${row('= المتاح',fmt(k.available))}
 ${row('− التزامات قادمة في الدورة',fmt(k.commit),'neg')}${k.U.length?`<div class="mut" style="font-size:12.5px;padding:0 0 8px;line-height:1.9">${k.U.map(x=>`${x.kind=='sub'?'اشتراك':'قسط'} ${esc(x.name)}: ${fmt(x.amount)} · ${x.late?'متأخر':dayLabel(x.date)}`).join('<br>')}</div>`:''}
-${row('− الادخار ('+sv()+'% من الدخل)',fmt(k.saveT),'neg')}${row('= القابل للإنفاق',fmt(k.spendable),k.over?'neg':'')}
+${k.hasSave?'':row('− الادخار ('+sv()+'% من الدخل)',fmt(k.saveT),'neg')}${row('= القابل للإنفاق',fmt(k.spendable),k.over?'neg':'')}
 ${row('÷ الأيام المتبقية',k.left+' يوم')}${row('= المتاح للصرف اليوم',fmt(k.perDay),'pos')}</div>
-<p class="mut" style="font-size:12.5px;line-height:1.9;margin:12px 0 0">الافتراضات: الدخل المتوقع هو الأعلى بين المسجّل ودخلك الشهري. الأهداف تتمول من نسبة الادخار. الرقم تقديري ويتحدث مع كل عملية تسجلها.${k.over?' صرفك تجاوز المتاح لهذي الدورة، فالمتاح اليوم صفر.':''}</p>`)}
+<p class="mut" style="font-size:12.5px;line-height:1.9;margin:12px 0 0">الافتراضات: نبدأ من رصيدك الفعلي في حساباتك (مع اللي باقي من الدورة اللي قبل)، ونضيف الراتب لو ما نزل بعد. حساب الادخار ما ينحسب ضمن المتاح للصرف. الرقم تقديري ويتحدث مع كل عملية تسجلها.${k.over?' صرفك تجاوز المتاح لهذي الدورة، فالمتاح اليوم صفر.':''}</p>`)}
 /* ===== financial status: transparent factors ===== */
 function healthCalc(){return at0(()=>{const k=safeCalc(),i=k.expectedInc,e=k.spent,proj=e/cD()*cL(),b=Object.fromEntries(byCat()),B=Object.entries(S.budgets),ov=B.filter(([c,l])=>(b[c]||0)>l),near=B.filter(([c,l])=>(b[c]||0)>=l*.8&&(b[c]||0)<=l),
  comM=subsM()+(S.installments||[]).filter(x=>x.paid<x.months).reduce((s,x)=>s+(+x.amount||0),0),late=(S.installments||[]).filter(x=>x.paid<x.months&&nextDue(x)<todayKey()),G=S.goals.filter(g=>g.c<g.t),F=[];
@@ -1087,13 +1094,13 @@ const FS={_db:null,open(){return this._db||(this._db=new Promise((res,rej)=>{if(
  async tx(mode,fn){const d=await this.open();return new Promise((res,rej)=>{const t=d.transaction('f',mode),st=t.objectStore('f'),rq=fn(st);t.oncomplete=()=>res(rq&&rq.result);t.onerror=()=>rej(t.error)})},
  put(k,b){return this.tx('readwrite',s=>s.put(b,k))},get(k){return this.tx('readonly',s=>s.get(k))},del(k){return this.tx('readwrite',s=>s.delete(k))}};
 let FURLS=[];
-function revokeFiles(){FURLS.forEach(u=>{try{URL.revokeObjectURL(u)}catch(e){}});FURLS=[]}
+function revokeFiles(){FURLS.forEach(u=>{try{URL.revokeObjectURL(u)}catch(e){logErr(e)}});FURLS=[]}
 function tmpURL(b){const u=URL.createObjectURL(b);FURLS.push(u);return u}
 function docImg(d,style){return d.fk?`<img data-fk="${d.fk}" alt="" style="${style}">`:`<img src="${d.file||''}" alt="" style="${style}">`}
-async function hydrateFiles(root){const els=[...(root||document).querySelectorAll('img[data-fk]:not([src])')];for(const el of els){try{const b=await FS.get(el.dataset.fk);if(b&&el.isConnected)el.src=tmpURL(b)}catch(e){}}}
+async function hydrateFiles(root){const els=[...(root||document).querySelectorAll('img[data-fk]:not([src])')];for(const el of els){try{const b=await FS.get(el.dataset.fk);if(b&&el.isConnected)el.src=tmpURL(b)}catch(e){logErr(e)}}}
 async function storeFile(blob){const fk='f'+Date.now().toString(36)+Math.random().toString(36).slice(2,7);try{await FS.put(fk,blob);return{fk,mime:blob.type,size:blob.size}}catch(e){return{file:await blobToDataURL(blob),mime:blob.type,size:blob.size}}}
 async function migrateDocs(){const L=(S.docs||[]).filter(d=>d.file&&/^data:/.test(d.file));if(!L.length)return;let n=0;
- for(const d of L){try{const b=await (await fetch(d.file)).blob(),r=await storeFile(b);if(r.fk){d.fk=r.fk;d.mime=d.mime||r.mime;d.size=r.size;delete d.file;n++}}catch(e){}}
+ for(const d of L){try{const b=await (await fetch(d.file)).blob(),r=await storeFile(b);if(r.fk){d.fk=r.fk;d.mime=d.mime||r.mime;d.size=r.size;delete d.file;n++}}catch(e){logErr(e)}}
  if(n){save();if($('#sh'))hydrateFiles($('#sh'))}}
 /* ===== home: one clear insight, commitments, goals ===== */
 const ALI={'🚨':['warn','bad'],'⚠️':['warn','warn'],'📈':['trend','warn'],'🎯':['target','good'],'🆕':['spark','info'],'⏰':['cal','bad'],'🔔':['bell','info']};
@@ -1137,35 +1144,36 @@ const INSTW=['تابي','تمارا','أخرى'];
 
 
 /* ===== accounts & cloud sync (Supabase Auth + one private row per user) ===== */
-const SB={url:'https://bcpxsrgfjvkkrynyjxkq.supabase.co',key:'sb_publishable_am-VqL0mY-5AG0SOIBcCLw_62llvpGb'};
+/* Supabase client config: the publishable key is designed to be public; data is protected by Row Level Security. Never put a secret/service key here. */
+const SB={url:'https://whhdabigebhoyhuqblid.supabase.co',key:'sb_publishable_OuCU9tHt-HVbtqYq-eZUqw_ggOra6KC'};
 const SBK='wf_sb';
 let SBS=null,SBok=null,SBt=null,SBbusy=false,SBlast='';
-try{SBS=JSON.parse(localStorage.getItem(SBK)||'null')}catch(e){}
-function sbSave(){try{SBS?localStorage.setItem(SBK,JSON.stringify(SBS)):localStorage.removeItem(SBK)}catch(e){}}
+try{SBS=JSON.parse(localStorage.getItem(SBK)||'null')}catch(e){logErr(e)}
+function sbSave(){try{SBS?localStorage.setItem(SBK,JSON.stringify(SBS)):localStorage.removeItem(SBK)}catch(e){logErr(e)}}
 const SB_ERR={email_address_not_authorized:'إرسال الإيميلات غير مفعّل لهذا العنوان بعد. تواصل مع صاحب التطبيق.',invalid_credentials:'الإيميل أو كلمة المرور غلط.',email_not_confirmed:'أكّد إيميلك أول من الرسالة اللي وصلتك، وبعدها سجّل دخول.',user_already_exists:'هذا الإيميل عنده حساب. سجّل دخول بدلًا من ذلك.',email_exists:'هذا الإيميل عنده حساب. سجّل دخول بدلًا من ذلك.',weak_password:'كلمة المرور ضعيفة. خلها 8 أحرف أو أكثر وفيها أرقام وحروف.',over_email_send_rate_limit:'طلبات كثيرة على الإيميل، انتظر شوي وجرّب.',over_request_rate_limit:'طلبات كثيرة، انتظر دقيقة وجرّب.',validation_failed:'تأكد من الإيميل وكلمة المرور.',same_password:'اختر كلمة مرور مختلفة عن القديمة.'};
 function sbMsg(j,st){const c=j&&(j.error_code||j.code||j.error);if(/not authorized/i.test((j&&(j.msg||j.message))||''))return SB_ERR.email_address_not_authorized;return SB_ERR[c]||(st==400&&/Invalid login/i.test(j&&(j.msg||j.error_description||''))?SB_ERR.invalid_credentials:(j&&(j.msg||j.message||j.error_description))||'صار خطأ، جرّب مرة ثانية.')}
 async function sbFetch(path,o={},auth){const h=Object.assign({'apikey':SB.key,'content-type':'application/json'},o.headers||{});if(auth){await sbFresh();if(!SBS)throw{code:'no_session',message:'انتهت الجلسة، سجّل دخول مرة ثانية.'};h.Authorization='Bearer '+SBS.access_token}
  const c=new AbortController(),tm=setTimeout(()=>c.abort(),15000);let r;try{r=await fetch(SB.url+path,Object.assign({},o,{headers:h,signal:c.signal}))}catch(e){throw{code:'network',message:'تعذر الاتصال. تأكد من الإنترنت.'}}finally{clearTimeout(tm)}
- let j=null;const t=await r.text();try{j=t?JSON.parse(t):null}catch(e){}
+ let j=null;const t=await r.text();try{j=t?JSON.parse(t):null}catch(e){logErr(e)}
  if(!r.ok){if(r.status==401&&auth){SBS=null;sbSave()}throw{code:(j&&(j.error_code||j.code))||'http_'+r.status,message:sbMsg(j,r.status),status:r.status}}return j}
 function sbStore(j){if(!j||!j.access_token)return false;SBS={access_token:j.access_token,refresh_token:j.refresh_token,expires_at:Date.now()+((+j.expires_in||3600)*1000),user:{id:j.user&&j.user.id,email:j.user&&j.user.email,name:j.user&&j.user.user_metadata&&j.user.user_metadata.name||'',phone:j.user&&j.user.user_metadata&&j.user.user_metadata.phone||''}};sbSave();return true}
-async function sbFresh(){if(!SBS||Date.now()<SBS.expires_at-60000)return;try{const j=await fetch(SB.url+'/auth/v1/token?grant_type=refresh_token',{method:'POST',headers:{'apikey':SB.key,'content-type':'application/json'},body:JSON.stringify({refresh_token:SBS.refresh_token})}).then(r=>r.ok?r.json():null);if(!sbStore(j)){SBS=null;sbSave()}}catch(e){}}
+async function sbFresh(){if(!SBS||Date.now()<SBS.expires_at-60000)return;try{const j=await fetch(SB.url+'/auth/v1/token?grant_type=refresh_token',{method:'POST',headers:{'apikey':SB.key,'content-type':'application/json'},body:JSON.stringify({refresh_token:SBS.refresh_token})}).then(r=>r.ok?r.json():null);if(!sbStore(j)){SBS=null;sbSave()}}catch(e){logErr(e)}}
 async function sbReachable(){if(SBok!=null)return SBok;try{const c=new AbortController(),tm=setTimeout(()=>c.abort(),7000);const r=await fetch(SB.url+'/auth/v1/health',{headers:{apikey:SB.key},signal:c.signal});clearTimeout(tm);SBok=r.status<500}catch(e){SBok=false}return SBok}
 function cloudPayload(){const d=Object.assign({},S);delete d.docs;return d}
 let SBwarn=false;
-async function cloudPush(){if(!SBS)return;if(SBbusy){cloudQueue();return}SBbusy=true;const m0=S._mod;try{await sbFetch('/rest/v1/user_data',{method:'POST',headers:{Prefer:'resolution=merge-duplicates,return=minimal'},body:JSON.stringify({user_id:SBS.user.id,data:cloudPayload(),updated_at:new Date().toISOString()})},true);S._pushed=m0;try{localStorage.setItem(K,JSON.stringify(S))}catch(e){}SBlast=new Date().toISOString()}catch(e){if(e.code!='network'&&!SBwarn){SBwarn=true;toast('تعذرت المزامنة: '+e.message)}throw e}finally{SBbusy=false}}
-function cloudQueue(){if(!SBS)return;clearTimeout(SBt);SBt=setTimeout(()=>cloudPush().catch(()=>{}),1500)}
+async function cloudPush(){if(!SBS)return;if(SBbusy){cloudQueue();return}SBbusy=true;const m0=S._mod;try{await sbFetch('/rest/v1/user_data',{method:'POST',headers:{Prefer:'resolution=merge-duplicates,return=minimal'},body:JSON.stringify({user_id:SBS.user.id,data:cloudPayload(),updated_at:new Date().toISOString()})},true);S._pushed=m0;try{localStorage.setItem(K,JSON.stringify(S))}catch(e){logErr(e)}SBlast=new Date().toISOString()}catch(e){if(e.code!='network'&&!SBwarn){SBwarn=true;toast('تعذرت المزامنة: '+e.message)}throw e}finally{SBbusy=false}}
+function cloudQueue(){if(!SBS)return;clearTimeout(SBt);SBt=setTimeout(()=>cloudPush().catch(logErr),1500)}
 async function cloudPull(opts={}){if(!SBS)return'none';const rows=await sbFetch('/rest/v1/user_data?select=data,updated_at&user_id=eq.'+encodeURIComponent(SBS.user.id),{method:'GET'},true);const row=rows&&rows[0];
  if(!row||!row.data){if(!opts.noPush)await cloudPush();return'pushed'}
  const R=row.data,rm=+R._mod||0,lm=+S._mod||0,unpushed=lm>(+S._pushed||0);
- if(opts.preferRemote||rm>lm||(S.demo&&!R.demo)||(!unpushed&&rm!==lm)){const docs=S.docs;S=R;S.docs=docs||[];S._pushed=S._mod=rm;S.installments=S.installments||[];try{localStorage.setItem(K,JSON.stringify(S))}catch(e){}SBlast=row.updated_at;return'pulled'}
+ if(opts.preferRemote||rm>lm||(S.demo&&!R.demo)||(!unpushed&&rm!==lm)){const docs=S.docs;S=R;S.docs=docs||[];S._pushed=S._mod=rm;S.installments=S.installments||[];try{localStorage.setItem(K,JSON.stringify(S))}catch(e){logErr(e)}SBlast=row.updated_at;return'pulled'}
  if(lm>rm){await cloudPush();return'pushed'}return'same'}
 /* sync when the user comes back to the app (works for logins made during the session too) */
-addEventListener('visibilitychange',()=>{if(document.visibilityState=='visible'&&SBS)setTimeout(()=>apSync(),800);if(document.visibilityState=='visible'&&SBS&&!SBbusy&&!(+S._mod>(+S._pushed||0)))cloudPull().then(r=>{if(r=='pulled'){render();toast('✓ تم تحديث بياناتك من حسابك')}}).catch(()=>{});else if(document.visibilityState=='hidden'&&SBS&&+S._mod>(+S._pushed||0))cloudPush().catch(()=>{})});
+addEventListener('visibilitychange',()=>{if(document.visibilityState=='visible'&&SBS)setTimeout(()=>apSync(),800);if(document.visibilityState=='visible'&&SBS&&!SBbusy&&!(+S._mod>(+S._pushed||0)))cloudPull().then(r=>{if(r=='pulled'){render();toast('✓ تم تحديث بياناتك من حسابك')}}).catch(logErr);else if(document.visibilityState=='hidden'&&SBS&&+S._mod>(+S._pushed||0))cloudPush().catch(logErr)});
 async function cloudBoot(){
- const h=location.hash||'';if(/access_token=/.test(h)){const q=new URLSearchParams(h.slice(1));const typ=q.get('type');try{const u=await fetch(SB.url+'/auth/v1/user',{headers:{apikey:SB.key,Authorization:'Bearer '+q.get('access_token')}}).then(r=>r.ok?r.json():null);if(u&&sbStore({access_token:q.get('access_token'),refresh_token:q.get('refresh_token'),expires_in:q.get('expires_in'),user:u})){history.replaceState(null,'',location.pathname+location.search);const md=u.user_metadata||{};setP({guest:false,name:(S.p&&S.p.name)||md.name||'',phone:(S.p&&S.p.phone)||(md.phone?fmtPhone(String(md.phone).replace('+','')):'')});if(typ=='recovery'){setTimeout(newPassUI,900)}else toast('✓ تم تأكيد حسابك وتسجيل الدخول')}}catch(e){}}
+ const h=location.hash||'';if(/access_token=/.test(h)){const q=new URLSearchParams(h.slice(1));const typ=q.get('type');try{const u=await fetch(SB.url+'/auth/v1/user',{headers:{apikey:SB.key,Authorization:'Bearer '+q.get('access_token')}}).then(r=>r.ok?r.json():null);if(u&&sbStore({access_token:q.get('access_token'),refresh_token:q.get('refresh_token'),expires_in:q.get('expires_in'),user:u})){history.replaceState(null,'',location.pathname+location.search);const md=u.user_metadata||{};setP({guest:false,name:(S.p&&S.p.name)||md.name||'',phone:(S.p&&S.p.phone)||(md.phone?fmtPhone(String(md.phone).replace('+','')):'')});if(typ=='recovery'){setTimeout(newPassUI,900)}else toast('✓ تم تأكيد حسابك وتسجيل الدخول')}}catch(e){logErr(e)}}
  else if(/error_description=/.test(h)){const q=new URLSearchParams(h.slice(1));history.replaceState(null,'',location.pathname+location.search);setTimeout(()=>toast('رابط التأكيد منتهي أو غير صالح. سجّل دخول أو اطلب رابط جديد.'),900)}
- if(!SBS)return;try{const r=await cloudPull();if(r=='pulled')render()}catch(e){}
+ if(!SBS)return;try{const r=await cloudPull();if(r=='pulled')render()}catch(e){logErr(e)}
  apSync();
  }
 /* ===== welcome & phone accounts (phone + password on Supabase Auth) ===== */
@@ -1219,7 +1227,7 @@ function showGate(mode){GM=mode||'home';const g=$('#gate');if(!g)return;close();
    sbStore(j);b.textContent='أجهّز بياناتك…';
    const r=await cloudPull().catch(()=>'err');
    const meta=(j.user&&j.user.user_metadata)||{};setP({guest:false,name:(S.p&&S.p.name)||meta.name||nm,phone:(S.p&&S.p.phone)||(meta.phone?fmtPhone(String(meta.phone).replace('+','')):ph?fmtPhone(ph):'')});
-   hideGate();render();setTimeout(()=>apSync(),600);toast(GM=='up'?'✓ أهلًا '+nm.split(' ')[0]+'، انشأ حسابك':r=='pulled'?'✓ أهلًا! رجعت بياناتك من حسابك':'✓ تم تسجيل الدخول')}
+   AIX.mode='';hideGate();render();setTimeout(()=>apSync(),600);toast(GM=='up'?'✓ أهلًا '+nm.split(' ')[0]+'، انشأ حسابك':r=='pulled'?'✓ أهلًا! رجعت بياناتك من حسابك':'✓ تم تسجيل الدخول')}
   catch(e2){if(!$('#ggo'))return;b.disabled=false;b.textContent=lbl;
    msg(e2.code=='invalid_credentials'?'الإيميل أو كلمة المرور غلط.':(e2.code=='user_already_exists'||e2.code=='email_exists')?'هذا الإيميل عنده حساب. سجّل دخول.':e2.code=='email_not_confirmed'?'أكّد إيميلك أول من الرسالة اللي وصلتك، وبعدها سجّل دخول.':e2.message||'صار خطأ، جرّب مرة ثانية.')}};
  setTimeout(()=>{const x=$('#gnm')||$('#gem');x&&x.focus()},350)}
@@ -1227,8 +1235,8 @@ function showGate(mode){GM=mode||'home';const g=$('#gate');if(!g)return;close();
 
 function newPassUI(){open(`<h3>كلمة مرور جديدة</h3><label class="mut">كلمة المرور الجديدة</label><input id="np" type="password" autocomplete="new-password" dir="ltr" placeholder="8 أحرف أو أكثر"><div id="npw" class="neg" style="font-size:13px;margin:-6px 0 10px"></div><button class="btn" id="npg" style="width:100%">حفظ</button>`);
  $('#npg').onclick=async()=>{const pw=$('#np').value;if(pw.length<8){$('#npw').textContent='لازم 8 أحرف أو أكثر.';return}try{await sbFetch('/auth/v1/user',{method:'PUT',body:JSON.stringify({password:pw})},true);close();toast('✓ تم تغيير كلمة المرور')}catch(e){$('#npw').textContent=e.message}}}
-async function signOut(wipe){clearTimeout(SBt);if(SBS&&+S._mod>(+S._pushed||0))await cloudPush().catch(()=>{});try{if(SBS)await fetch(SB.url+'/auth/v1/logout',{method:'POST',headers:{apikey:SB.key,Authorization:'Bearer '+SBS.access_token}})}catch(e){}
- SBS=null;sbSave();if(wipe){const pp=S.p;S=demo();S.p=pp?{av:pp.av,acc:pp.acc,bg:pp.bg,fs:pp.fs,cur:pp.cur}:undefined;S._mod=0;try{localStorage.setItem(K,JSON.stringify(S))}catch(e){}}
+async function signOut(wipe){clearTimeout(SBt);if(SBS&&+S._mod>(+S._pushed||0))await cloudPush().catch(logErr);try{if(SBS)await fetch(SB.url+'/auth/v1/logout',{method:'POST',headers:{apikey:SB.key,Authorization:'Bearer '+SBS.access_token}})}catch(e){logErr(e)}
+ SBS=null;sbSave();AIX.mode='';if(wipe){const pp=S.p;S=demo();S.p=pp?{av:pp.av,acc:pp.acc,bg:pp.bg,fs:pp.fs,cur:pp.cur}:undefined;S._mod=0;try{localStorage.setItem(K,JSON.stringify(S))}catch(e){logErr(e)}}
  if(S.p)S.p.guest=false;tab='home';render();showGate('home');toast(wipe?'تم تسجيل الخروج ومسح بياناتك من هذا الجهاز':'تم تسجيل الخروج')}
 function acctRows(row){if(!SBS)return row('☁️','سجّل دخول أو أنشئ حساب','وتدخل من أي جهاز وتلقى بياناتك','','data-e="acct"');
  const ph=(SBS.user.phone||(S.p&&S.p.phone)||'');const em=/@phone\.sorra\.app$/.test(SBS.user.email||'')?'':(SBS.user.email||'');return row('🔒',esc(SBS.user.name||(S.p&&S.p.name)||'حسابي'),em?'<span dir="ltr">'+esc(em)+'</span>':ph?'<span dir="ltr">'+esc(ph.startsWith('+')&&!ph.includes(' ')?fmtPhone(ph.slice(1)):ph)+'</span>':'بياناتك تتزامن تلقائيًا','','data-e="sync"')+row('🔄','زامن الآن','','','data-e="sync"')+row('🚪','تسجيل الخروج','','','data-e="logout"')+'</div><div class="apwrap">'+apButtons()}
@@ -1237,23 +1245,25 @@ function logoutUI(){open(`<h3>تسجيل الخروج</h3><p class="mut" style="
 
 /* ===== AI engine: Claude viewer → your own server → on-device ===== */
 const AIX={mode:'',sm:null,img:false,url:''};
-const AI_LABEL={claude:'متصل بـ Claude',server:'متصل بخادمك',local:'تحليل محلي على جهازك'};
+const AI_LABEL={claude:'متصل بـ Claude',edge:'متصل عبر Supabase',server:'متصل بخادمك',local:'تحليل محلي على جهازك'};
 const r2=n=>Math.round((+n||0)*100)/100;
-function aiSrv(){const p=S.p||{};if(p.aiUrl)return String(p.aiUrl).trim().replace(/\/+$/,'');if(/^https?:$/.test(location.protocol)&&!/(claude\.ai|claudeusercontent\.com|claude\.site)$/.test(location.hostname))return location.origin;return''}
-function aiHdr(){const t=S.p&&S.p.aiTok;return Object.assign({'content-type':'application/json'},t?{'x-app-token':String(t)}:{})}
+function aiSrv(){const p=S.p||{};if(p.aiUrl)return String(p.aiUrl).trim().replace(/\/+$/,'');if(/^https?:$/.test(location.protocol)&&!/(claude\.ai|claudeusercontent\.com|claude\.site|github\.io)$/.test(location.hostname))return location.origin;return''}
+function aiHdr(){if(AIX.edge&&SBS)return{'content-type':'application/json',apikey:SB.key,Authorization:'Bearer '+SBS.access_token};const t=S.p&&S.p.aiTok;return Object.assign({'content-type':'application/json'},t?{'x-app-token':String(t)}:{})}
 async function aiInit(force){
  if(AIX.mode&&!force)return AIX.mode;
  AIX.mode='';AIX.sm=null;AIX.img=false;AIX.url='';
- try{if(window.claude&&typeof claude.use=='function'){const sm=await Promise.race([claude.use('sample'),new Promise(r=>setTimeout(()=>r(null),6000))]);if(sm){AIX.sm=sm;try{const l=await sm.limits();AIX.img=!!(l&&l.images)}catch(e){}return AIX.mode='claude'}}}catch(e){}
+ try{if(window.claude&&typeof claude.use=='function'){const sm=await Promise.race([claude.use('sample'),new Promise(r=>setTimeout(()=>r(null),6000))]);if(sm){AIX.sm=sm;try{const l=await sm.limits();AIX.img=!!(l&&l.images)}catch(e){logErr(e)}return AIX.mode='claude'}}}catch(e){logErr(e)}
+ AIX.edge=false;
+ if(SBS){try{await sbFresh();AIX.edge=true;const c=new AbortController(),tm=setTimeout(()=>c.abort(),6000);const r=await fetch(SB.url+'/functions/v1/ai/health',{signal:c.signal,headers:aiHdr()});clearTimeout(tm);if(r.ok){const j=await r.json();if(j&&j.ok){AIX.url=SB.url+'/functions/v1/ai';AIX.img=!!j.vision;return AIX.mode='edge'}}}catch(e){logErr(e,'ai-edge')}AIX.edge=false}
  const u=aiSrv();
- if(u){try{const c=new AbortController(),tm=setTimeout(()=>c.abort(),6000);const r=await fetch(u+'/api/health',{signal:c.signal,headers:aiHdr()});clearTimeout(tm);if(r.ok){const j=await r.json();if(j&&j.ok){AIX.url=u;AIX.img=!!j.vision;return AIX.mode='server'}}}catch(e){}}
+ if(u){try{const c=new AbortController(),tm=setTimeout(()=>c.abort(),6000);const r=await fetch(u+'/api/health',{signal:c.signal,headers:aiHdr()});clearTimeout(tm);if(r.ok){const j=await r.json();if(j&&j.ok){AIX.url=u;AIX.img=!!j.vision;return AIX.mode='server'}}}catch(e){logErr(e)}}
  return AIX.mode='local'}
 async function aiText(turns,o={}){
  const m=await aiInit();
  if(m=='claude'){const r=await AIX.sm(turns,{cache:false,onText:o.onText,signal:o.signal,modelTier:o.tier||'default'});return r.text}
- if(m=='server'){
+ if(m=='server'||m=='edge'){if(m=='edge')await sbFresh();
   const r=await fetch(AIX.url+'/api/chat',{method:'POST',headers:aiHdr(),body:JSON.stringify({messages:turns,tier:o.tier||'default'}),signal:o.signal});
-  if(!r.ok){let msg='';try{msg=(await r.json()).error}catch(e){}throw{code:r.status==401?'not_granted':r.status==429?'rate_limited':'server',message:msg||('HTTP '+r.status)}}
+  if(!r.ok){let msg='';try{msg=(await r.json()).error}catch(e){logErr(e)}throw{code:r.status==401?'not_granted':r.status==429?'rate_limited':'server',message:msg||('HTTP '+r.status)}}
   const rd=r.body.getReader(),dec=new TextDecoder();let t='';
   for(;;){const{done,value}=await rd.read();if(done)break;t+=dec.decode(value,{stream:true});const k=t.indexOf('\u0000ERR:');if(k>=0)throw{code:'server',message:t.slice(k+5),text:t.slice(0,k)};o.onText&&o.onText({text:t})}
   return t}
@@ -1262,7 +1272,7 @@ function blobToDataURL(b){return new Promise((res,rej)=>{const r=new FileReader(
 async function aiJSON(prompt,o={}){
  const m=await aiInit();
  if(m=='claude'){const opt={modelTier:o.tier||'quick',cache:false,signal:o.signal};if(o.image)opt.images=o.image;return AIX.sm.json(prompt,opt)}
- if(m=='server'){let image=null;if(o.image){const du=await blobToDataURL(o.image);image={media_type:du.slice(5,du.indexOf(';')),data:du.slice(du.indexOf(',')+1)}}
+ if(m=='server'||m=='edge'){if(m=='edge')await sbFresh();let image=null;if(o.image){const du=await blobToDataURL(o.image);image={media_type:du.slice(5,du.indexOf(';')),data:du.slice(du.indexOf(',')+1)}}
   const r=await fetch(AIX.url+'/api/json',{method:'POST',headers:aiHdr(),body:JSON.stringify({prompt,image,tier:o.tier||'quick'}),signal:o.signal});
   const j=await r.json().catch(()=>({}));if(!r.ok||j.error)throw{code:r.status==401?'not_granted':'server',message:j.error||('HTTP '+r.status)};return j.data}
  throw{code:'offline'}}
@@ -1321,7 +1331,7 @@ function voiceAdd(){
 <button class="btn" id="vgo" style="width:100%">افهم وأضف</button><p class="mut" id="veng" style="font-size:12px;text-align:center;margin:10px 0 0"></p>`);
  aiInit().then(m=>{const e=$('#veng');if(e)e.textContent=m=='local'?'الفهم يتم على جهازك':'الفهم بالذكاء الاصطناعي · '+AI_LABEL[m]});
  const mic=$('#vmic'),st=$('#vst'),tx=$('#vtxt');
- const stop=()=>{mic.classList.remove('on');try{REC&&REC.stop()}catch(e){}REC=null};
+ const stop=()=>{mic.classList.remove('on');try{REC&&REC.stop()}catch(e){logErr(e)}REC=null};
  mic.onclick=()=>{if(REC){stop();return}
   mic.classList.add('on');st.textContent='أسمعك الحين… تكلم';
   REC=listen({part:t=>{tx.value=t;st.textContent='أسمعك الحين…'},end:t=>{mic.classList.remove('on');REC=null;if(t.trim()){st.textContent='تمام، أفهم كلامك…';go()}else st.textContent=MIC_ERR['no-speech']},err:c=>{mic.classList.remove('on');REC=null;st.textContent=MIC_ERR[c]||MIC_ERR.error;if(c!='no-speech'&&c!='aborted')tx.focus()}});
@@ -1401,7 +1411,7 @@ function reply_(q){const n=normA(q),e=sum(exps()),b=byCat(),i=inc(),pvE=sum(S.tx
  const catHit=CATS.find(c=>n.includes(normA(c[2])))||(guessCat(n)&&!has(/اشتراك/)?cat(guessCat(n)):null);
  if(has(/^(هلا|السلام|مرحبا|هاي|اهلين|صباح|مساء)/))return`هلا والله! هذا الشهر صرفت **${fmt(e)}** من دخل **${fmt(i)}**، والمتبقي **${fmt(i-e)}**. وش تحب نشوف؟`+demoN;
  if(!e&&!i)return'ما عندك عمليات مسجلة بعد. أضف أول مصروف أو دخل، وأحلل لك وضعك بالأرقام.';
- if(has(/باقي|متبقي|رصيد|كم معي|كم عندي/))return`المتبقي من دخلك هذا الشهر **${fmt(i-e)}**. باقي **${nextPayIn()}** يوم على الراتب، يعني تقدر تصرف حوالي **${fmt(Math.max(0,i-e)/Math.max(1,nextPayIn()))}** يوميًا.`+demoN;
+ if(has(/باقي|متبقي|رصيد|كم معي|كم عندي/)){const cm=cycleMoney(0);return`رصيدك الحالي **${fmt(cm.now)}** (بدأت الدورة بـ ${fmt(cm.start)} ودخلك فيها ${fmt(cm.i)})${cm.save?`، وفي حساب الادخار ${fmt(cm.save)}`:''}. باقي **${nextPayIn()}** يوم على الراتب، وتقدر تصرف حوالي **${fmt(safe())}** يوميًا.`+demoN}
  if(has(/كم اقدر|اصرف اليوم|مسموح/))return`تقدر تصرف اليوم بأمان حوالي **${fmt(safe())}** مع الحفاظ على ادخار ${sv()}% من دخلك.`+demoN;
  if(has(/نهايه|المعدل|استمر|توقع/))return`معدلك الحالي **${fmt(e/cD())}** يوميًا، فالمتوقع تصرف حوالي **${fmt(proj)}** بنهاية الشهر${i?` (${Math.round(proj/i*100)}% من دخلك)`:''}.${pvE?`\nالشهر الماضي صرفت ${fmt(pvE)}.`:''}`+demoN;
  if(has(/اوفر|وفر|ادخر|توفير/)){const g=+(AR_DIG(q).match(/\d+/)||[0])[0]||wordsNum(q)||1000,cut=b.filter(x=>['food','coffee','fun','shop','subs'].includes(x[0])),plan=cut.map(x=>[x,x[1]*.25]),s=plan.reduce((a,x)=>a+x[1],0);return`هدفك توفير **${fmt(g)}**. خطة مقترحة من مصاريفك الفعلية:\n${plan.map(([x,v])=>`• خفّض ${cat(x[0])[2]} 25%: توفر ${fmt(v)}`).join('\n')}\nالمجموع **${fmt(s)}**${s>=g?' ويكفي لهدفك.':`، والباقي ${fmt(g-s)} يحتاج مراجعة بقية المصاريف أو دخل إضافي.`}`+demoN}
@@ -1437,7 +1447,7 @@ function aiCtx_(){const mk=k=>-k,catName=k=>(k=='other'&&S.p&&S.p.otherBudgetLab
  const wd=['الأحد','الاثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت'],W={};exps().forEach(t=>{const k=wd[new Date(t.date+'T00:00:00').getDay()];W[k]=r2((W[k]||0)+t.amount)});
  const e=sum(exps()),i=inc(),bm=Object.fromEntries(byCat());
  const build=nTx=>JSON.stringify({isDemoData:!!S.demo,currency:cur(),today:lf(now),userName:(S.p&&S.p.name)||'',paydayDayOfMonth:payDay(),daysUntilPayday:nextPayIn(),financialCycle:{start:getFinancialCycleStart(0),end:getFinancialCycleEnd(0)},daysLeftInCycle:cycleLeft(0),
-  thisCycle:{income:r2(i),spent:r2(e),remaining:r2(i-e),spendingRatePct:i?Math.round(e/i*100):null,dailyAvg:r2(e/cD()),projectedCycleEnd:r2(e/cD()*cL()),safeToSpendToday:r2(safe()),savingsTargetPct:sv(),budgetRule:ruleP()},
+  thisCycle:{income:r2(i),spent:r2(e),remaining:r2(i-e),realBalanceNow:balAt(null),balanceAtCycleStart:cycleMoney(0).start,spendingRatePct:i?Math.round(e/i*100):null,dailyAvg:r2(e/cD()),projectedCycleEnd:r2(e/cD()*cL()),safeToSpendToday:r2(safe()),savingsTargetPct:sv(),budgetRule:ruleP()},
   last6Cycles:months,categories:cats,spendingByWeekdayThisMonth:W,
   budgets:Object.entries(S.budgets).map(([k,l])=>({category:catName(k),limit:l,spent:r2(bm[k]||0)})),
   subscriptions:S.subs.map(x=>({name:x.n,price:x.p,cycle:x.cy,chargeDay:x.d,paused:paused(x)})),monthlySubscriptionsTotal:r2(subsM()),
@@ -1474,7 +1484,7 @@ function bindAI(){const b=$('#aib');if(b)aiInit().then(m=>{if(b.isConnected){b.t
  const c=$('#chat');if(c)c.scrollTop=1e5;
  const g=$('#ai_go');if(g){g.onclick=()=>{if(AIC){AIC.abort();return}const v=$('#ai_q').value;$('#ai_q').value='';ask(v)};$('#ai_q').onkeydown=e=>{if(e.key=='Enter'){e.preventDefault();g.click()}}}
  const nw=$('#ai_new');if(nw)nw.onclick=()=>{if(AIC)AIC.abort();S.aiChat=[];save();$('#chat').innerHTML=chatHTML()};
- const mc=$('#ai_mic');if(mc)mc.onclick=()=>{if(REC){try{REC.stop()}catch(e){}return}mc.classList.add('on');REC=listen({part:t=>{$('#ai_q').value=t},end:t=>{mc.classList.remove('on');REC=null;if(t.trim()){$('#ai_q').value='';ask(t)}},err:k=>{mc.classList.remove('on');REC=null;toast(k=='no-speech'?'ما سمعت شيء':'استخدم مايك لوحة المفاتيح للكتابة بالصوت');$('#ai_q').focus()}})}}
+ const mc=$('#ai_mic');if(mc)mc.onclick=()=>{if(REC){try{REC.stop()}catch(e){logErr(e)}return}mc.classList.add('on');REC=listen({part:t=>{$('#ai_q').value=t},end:t=>{mc.classList.remove('on');REC=null;if(t.trim()){$('#ai_q').value='';ask(t)}},err:k=>{mc.classList.remove('on');REC=null;toast(k=='no-speech'?'ما سمعت شيء':'استخدم مايك لوحة المفاتيح للكتابة بالصوت');$('#ai_q').focus()}})}}
 function aiSettings(){const p=S.p||{};open(`<h3>ربط الذكاء الاصطناعي</h3><p class="mut" style="line-height:1.8;margin-top:-6px">داخل Claude يشتغل تلقائيًا. خارج Claude، شغّل خادم «صُرة» المرفق وضع رابطه هنا ليشتغل فلوسي AI وقراءة الفواتير بالكامل. بدون خادم، يشتغل التحليل محليًا على جهازك.</p>
 <div class="demo" id="aist"><span>الحالة: جاري الفحص…</span></div>
 <label class="mut">رابط الخادم (اختياري)</label><input id="aiu" dir="ltr" placeholder="https://your-server.com" value="${esc(p.aiUrl||'')}"><label class="mut">رمز الوصول (APP_TOKEN، اختياري)</label><input id="ait" dir="ltr" type="password" value="${esc(p.aiTok||'')}" autocomplete="off">
@@ -1535,8 +1545,8 @@ $('#pf').onclick=profile;$('#mic').onclick=voiceAdd;$('#home').onclick=()=>{tab=
 $('#bell').onclick=()=>bellUI();
 function bellUI(){const A=alerts();open('<h3>التنبيهات</h3>'+(A.length?A.map(a=>`<div class="glass card" style="margin:8px 0"><div class="row" style="margin:0">${alIcon(a[0])}<span class="grow">${a[1]}</span><button class="ib" data-dm="${esc(a[2])}" aria-label="تجاهل" style="width:32px;height:32px">✕</button></div></div>`).join(''):'<p class="mut">كل شيء تمام، ما فيه تنبيهات.</p>'));
 document.querySelectorAll('[data-dm]').forEach(b=>b.onclick=()=>{S.dismissed=S.dismissed||[];S.dismissed.push(b.dataset.dm);save();bellUI()})}
-function theme(t){const _e=t=='auto'?(matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light'):t;document.documentElement.dataset.theme=_e;const tm=document.querySelector('meta[name=theme-color]');if(tm)tm.content=_e=='dark'?'#0b0f0d':'#f6f4ee';try{localStorage.setItem('wf_t',t)}catch(e){}}
-let t0='dark';try{t0=localStorage.getItem('wf_t')||'dark'}catch(e){}theme(t0);acc();
+function theme(t){const _e=t=='auto'?(matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light'):t;document.documentElement.dataset.theme=_e;const tm=document.querySelector('meta[name=theme-color]');if(tm)tm.content=_e=='dark'?'#0b0f0d':'#f6f4ee';try{localStorage.setItem('wf_t',t)}catch(e){logErr(e)}}
+let t0='dark';try{t0=localStorage.getItem('wf_t')||'dark'}catch(e){logErr(e)}theme(t0);acc();
 document.addEventListener('pointermove',e=>{const g=e.target.closest&&e.target.closest('.glass');if(!g)return;const r=g.getBoundingClientRect();g.style.setProperty('--mx',(e.clientX-r.left)+'px');g.style.setProperty('--my',(e.clientY-r.top)+'px');if(g.classList.contains('big')&&e.pointerType=='mouse'&&!matchMedia('(prefers-reduced-motion:reduce)').matches)g.style.transform=`perspective(800px) rotateY(${(e.clientX-r.left)/r.width*6-3}deg) rotateX(${3-(e.clientY-r.top)/r.height*6}deg)`});
 document.addEventListener('pointerleave',()=>{document.querySelectorAll('.big').forEach(b=>b.style.transform='')},true);
 $('#view').innerHTML='<div class="sk"></div><div class="sk"></div><div class="sk"></div>';
@@ -1547,7 +1557,7 @@ if(matchMedia('(prefers-reduced-motion:reduce)').matches){setTimeout(end,300)}
 else if(isTouch||!iv){showFallback()}
 else{iv.addEventListener('ended',end);iv.addEventListener('error',showFallback);sp.addEventListener('click',end);setTimeout(end,6000)}})();
 let lastY=0;addEventListener('scroll',()=>{const y=scrollY,B=document.body.classList;B.toggle('scrolled',y>420);B.toggle('sc',y>8);if(Math.abs(y-lastY)>6){B.toggle('fabhide',y>lastY&&y>160);lastY=y}},{passive:true});
-setTimeout(()=>{if(!SBS&&!/access_token=|error_description=/.test(location.hash)){autoPayIncome();render();autoCapture();migrateDocs();if(!(S.p&&S.p.guest))showGate('home')}else{render();cloudBoot().catch(()=>{}).finally(()=>{autoPayIncome();render();autoCapture();migrateDocs()})}},450);
+setTimeout(()=>{if(!SBS&&!/access_token=|error_description=/.test(location.hash)){autoPayIncome();render();autoCapture();migrateDocs();if(!(S.p&&S.p.guest))showGate('home')}else{render();cloudBoot().catch(logErr).finally(()=>{autoPayIncome();render();autoCapture();migrateDocs()})}},450);
 </script>
 </body>
 </html>
