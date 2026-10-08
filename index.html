@@ -2,7 +2,7 @@
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="utf-8">
-<meta name="theme-color" content="#000000"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0b0f0d"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>صُرة</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
@@ -722,7 +722,7 @@ const V={
 home(){const i=inc(),e=sum(exps()),cm=cycleMoney(),r=cm.now,hr=new Date().getHours(),nm=S.p&&S.p.name?esc(String(S.p.name).split(' ')[0]):'',pc=cm.avail>0?Math.min(100,Math.round(e/cm.avail*100)):(e?100:0);let dt='',mn='';try{dt=new Date().toLocaleDateString('ar-SA-u-ca-gregory-nu-latn',{weekday:'long',day:'numeric',month:'long'});mn=new Date().toLocaleDateString('ar-SA-u-ca-gregory-nu-latn',{month:'long'})}catch(x){logErr(x)}
 return`<span class="kick">${dt}</span><h1>${hr>=4&&hr<12?'صباح الخير':'مساء الخير'}${nm?'، '+nm:''}</h1>
 <div class="notes">${S.demo?'<div class="demo"><span>تشوف الحين بيانات تجريبية.</span><button class="btn s" id="clr">ابدأ بياناتي</button></div>':''}${!(S.p&&+S.p.inc>0)?'<div class="demo"><span>حدد دخلك الشهري ليضاف راتبك تلقائيًا.</span><button class="btn s" id="setInc">تحديد</button></div>':''}</div>
-${cycNav()}<section class="bal"><span class="lbl">${CYO==0?'رصيدك المتاح الحين':'رصيدك بنهاية هذه الدورة'}</span><span class="bn" data-n="${r}"></span><span class="bs">بدأت الدورة بـ ${fmt(cm.start)} + دخل ${fmt(i)}${cm.save?` · في الادخار ${fmt(cm.save)}`:''}</span>
+${cycNav()}<section class="bal"><span class="lbl">${CYO==0?'رصيدك المتاح الحين':'رصيدك بنهاية هذه الدورة'}</span><span class="bn" data-n="${r}"></span><span class="bs">بدأت الدورة بـ ${fmt(cm.start)} + دخل ${fmt(i)}${cm.mv>0?` + من الادخار ${fmt(cm.mv)}`:cm.mv<0?` − للادخار ${fmt(-cm.mv)}`:''}${cm.save?` · في الادخار ${fmt(cm.save)}`:''}</span>
 <div class="track bar"><i data-w="${pc}"></i></div><div class="leg"><span>صرفت <b>${fmt(e)}</b></span><span>${pc}% من المتاح لك</span></div></section>
 ${CYO==0?`<div class="stats3"><div><span>الدخل</span><b>${fmt(i)}</b></div><div><span>الصرف</span><b>${fmt(e)}</b></div><div><span>المتاح اليوم</span><b>${safeCalc().ok?fmt(safe()):'—'}</b></div></div>`:''}
 <div class="qact"><button class="qbtn pri" data-add="exp"><i>${IC.plus}</i>مصروف</button><button class="qbtn" data-add="inc"><i>${IC.inc}</i>دخل</button><button class="qbtn" data-add="transfer"><i>${IC.xfer}</i>تحويل</button><button class="qbtn" id="rcpQ"><i>${IC.cam}</i>فاتورة</button></div>
@@ -818,9 +818,9 @@ if(a!=null){dt.setAttribute('cx',34+(d-1)/Math.max(1,LC.dm-1)*278);dt.setAttribu
 $('#lt').innerHTML='<b>يوم '+d+'</b>: '+(a!=null?'إجمالي '+fmt(a):'توقع '+fmt(LC.proj*d/LC.dm))+(b!=null?' · <span class="mut">الشهر الماضي '+fmt(b)+'</span>':'')};lc.onpointermove=mv;lc.onclick=mv}}
 
 /* profile page */
-const AV=['👤','👦','👧','🧒','👶','👨','👩','🧑','👴','👵','🧕','👳','😎','🦊','🐱','🐶','🐻','🐼','🐨','🐯','🦁','🐺','🐸','🐵','🦉','🐧','🦄','🐢','🐙','🦋','🌵','🌻','🍉','⚡','🔥','🌊','🌙','⭐','🎯','🎮','🎧','⚽','🏀','🚀','💎','🦅','😺','🤖'],BGN=['أسود','أسود عقيقي','عنّابي داكن','كحلي ليلي'],BG=[['#000000','#000000','#f2f2f7','#f2f2f7'],['#0f0f10','#1b1b1d','#f5f5f2','#e8e8e3'],['#1b0f12','#2b171c','#f8f1ee','#efe1dc'],['#0b1220','#15203a','#f1f4f8','#e1e7ef']],hx=(v,d)=>/^#[0-9a-f]{6}$/i.test(v)?v:d,themePref=()=>{try{return localStorage.getItem('wf_t')||'dark'}catch(e){return'dark'}};
+const AV=['👤','👦','👧','🧒','👶','👨','👩','🧑','👴','👵','🧕','👳','😎','🦊','🐱','🐶','🐻','🐼','🐨','🐯','🦁','🐺','🐸','🐵','🦉','🐧','🦄','🐢','🐙','🦋','🌵','🌻','🍉','⚡','🔥','🌊','🌙','⭐','🎯','🎮','🎧','⚽','🏀','🚀','💎','🦅','😺','🤖'],BGN=['أخضر صنوبري','أسود عقيقي','عنّابي داكن','كحلي ليلي','أسود'],BG=[['#0b0f0d','#0f1512','#f6f4ee','#efede5'],['#0f0f10','#1b1b1d','#f5f5f2','#e8e8e3'],['#1b0f12','#2b171c','#f8f1ee','#efe1dc'],['#0b1220','#15203a','#f1f4f8','#e1e7ef'],['#000000','#000000','#f2f2f7','#f2f2f7']],hx=(v,d)=>/^#[0-9a-f]{6}$/i.test(v)?v:d,themePref=()=>{try{return localStorage.getItem('wf_t')||'dark'}catch(e){return'dark'}};
 function acc(){let z=document.getElementById('accs');if(!z){z=document.createElement('style');z.id='accs';document.head.appendChild(z)}const p=S.p||{},a=p.acc=='c'?[hx(p.c1,'#d6b26e'),hx(p.c2,'#5f9e80'),hx(p.c1,'#9a7432'),hx(p.c2,'#7a5a22')]:(ACC[p.acc||0]||ACC[0]),b=BG[p.bg||0]||BG[0];
-z.textContent=`:root[data-theme=dark]{--ac:${a[0]};--ac2:${a[1]};--bg1:${b[0]};--bg2:${b[1]}}:root[data-theme=light]{--ac:${a[2]};--ac2:${a[3]};--bg1:${b[2]};--bg2:${b[3]}}`;
+z.textContent=`:root[data-theme=dark]{--ac:${a[0]};--ac2:${a[1]};--bg1:${b[0]};--bg2:${b[1]};--surf:color-mix(in srgb,#fff 9%,${b[0]});--card:var(--surf);--sheet:var(--surf);--surf2:color-mix(in srgb,#fff 15%,${b[0]});--mat:color-mix(in srgb,color-mix(in srgb,#fff 9%,${b[0]}) 74%,transparent)}:root[data-theme=light]{--ac:${a[2]};--ac2:${a[3]};--bg1:${b[2]};--bg2:${b[3]}}`;
 document.body.style.zoom=[.92,1,1.1,1.2][p.fs==null?1:p.fs]||1;document.documentElement.classList.toggle('rm',!!p.rm);$('#pf').textContent=p.av||'👤'}
 function profile(){if(!(S.p&&S.p.since)){let ms;try{ms=now.toLocaleDateString('ar-SA-u-ca-gregory-nu-latn',{month:'long',year:'numeric'})}catch(e){ms=String(now.getFullYear())}setP({since:ms})}tab='prof';render();scrollTo({top:0})}
 function rp(){acc();$('#view').innerHTML=V.prof();bindProf()}
@@ -1038,7 +1038,7 @@ function isSaveAcc(a){return!!a&&(a.id=='save'||/ادخار|توفير/.test(a.n
 function spendAccts(){return accts().filter(a=>!isSaveAcc(a))}
 function dayBefore(k){const d=new Date(k+'T00:00:00');d.setDate(d.getDate()-1);return lf(d)}
 function balAt(upto,L){return r2((L||spendAccts()).reduce((s,a)=>s+accBal(a.id,upto),0))}
-function cycleMoney(o){o=o==null?CYO:o;const c=getFinancialCycle(o),end=o==0?null:c.end,start=balAt(dayBefore(c.start)),i=sum(S.tx.filter(t=>isIncomeTx(t)&&inCycle(t.date,o))),e=sum(S.tx.filter(t=>isSpend(t)&&inCycle(t.date,o))),now=balAt(end),save=r2(accts().filter(isSaveAcc).reduce((s,a)=>s+accBal(a.id,end),0));return{start,i,e,now,save,avail:r2(start+i)}}
+function cycleMoney(o){o=o==null?CYO:o;const c=getFinancialCycle(o),end=o==0?null:c.end,start=balAt(dayBefore(c.start)),i=sum(S.tx.filter(t=>isIncomeTx(t)&&inCycle(t.date,o))),e=sum(S.tx.filter(t=>isSpend(t)&&inCycle(t.date,o))),now=balAt(end),save=r2(accts().filter(isSaveAcc).reduce((s,a)=>s+accBal(a.id,end),0)),sp=new Set(spendAccts().map(a=>a.id)),mv=r2(S.tx.filter(t=>t.type=='move'&&inCycle(t.date,o)).reduce((s,t)=>s+(sp.has(t.to)&&!sp.has(t.from)?+t.amount:!sp.has(t.to)&&sp.has(t.from)?-t.amount:0),0));return{start,i,e,now,save,mv,avail:r2(start+i+Math.max(0,mv))}}
 /* ===== money accounts: one source for real balances ===== */
 const ACCT={bank:['حساب بنكي','bank'],card:['بطاقة ائتمانية','card'],wallet:['محفظة','wallet'],other:['حساب آخر','coin']};
 function accts(all){S.accounts=S.accounts&&S.accounts.length?S.accounts:[{id:'bank',name:'الحساب الأساسي',type:'bank',bank:'الراجحي',last4:'',open:0},{id:'save',name:'حساب الادخار',type:'bank',bank:'الراجحي',last4:'',open:0}];return all?S.accounts:S.accounts.filter(a=>!a.hidden)}
@@ -1176,18 +1176,18 @@ function upcoming(){const c=getFinancialCycle(0),L=[];
  return L.sort((a,b)=>a.date.localeCompare(b.date))}
 /* ===== "how much can I spend today" ===== */
 function safeCalc(){return at0(()=>{const c=getFinancialCycle(0),left=cycleLeft(0),incRec=sum(S.tx.filter(t=>isIncomeTx(t)&&inCycle(t.date,0))),incSet=+(S.p&&S.p.inc)||0,expectedInc=Math.max(incRec,incSet),pending=Math.max(0,incSet-incRec),
- spent=sum(S.tx.filter(t=>isSpend(t)&&inCycle(t.date,0))),bal=balAt(null),hasSave=accts().some(isSaveAcc),U=upcoming(),commit=U.reduce((s,x)=>s+x.amount,0),saveT=hasSave?0:Math.max(0,expectedInc*sv()/100),available=r2(bal+pending),spendable=r2(available-commit-saveT),missing=[];
+ spent=sum(S.tx.filter(t=>isSpend(t)&&inCycle(t.date,0))),bal=balAt(null),hasSave=accts().some(isSaveAcc),U=upcoming(),commit=U.reduce((s,x)=>s+x.amount,0),fresh=!S.tx.length,saveT=hasSave||!fresh?0:Math.max(0,expectedInc*sv()/100),available=r2(fresh?Math.max(bal,incSet):bal),spendable=r2(available-commit-saveT),missing=[];
  if(!S.tx.length&&!incSet&&!bal)missing.push('دخلك الشهري أو رصيد حسابك');
- return{ok:!missing.length,missing,perDay:Math.max(0,spendable/left),spendable,available,bal,hasSave,expectedInc,incRec,pending,spent,U,commit,saveT,left,c,over:spendable<0}})}
+ return{ok:!missing.length,missing,perDay:r2(Math.max(0,Math.min(spendable/Math.max(1,left),available))),spendable,available,bal,hasSave,expectedInc,incRec,pending:0,spent,U,commit,saveT,left,c,over:spendable<0}})}
 function safe(){return safeCalc().perDay}
 function safeHow(){const k=safeCalc(),row=(l,v,cls)=>`<div class="trow"><span class="grow">${l}</span><b class="${cls||''}">${v}</b></div>`;
  if(!k.ok){open(`<h3>كيف حسبناها؟</h3><p class="mut" style="line-height:1.9">ما نقدر نحسبها بدقة الحين، ناقصنا: <b>${k.missing.join('، ')}</b>. ما نخترع رقم بدونها.</p><button class="btn" id="shI" style="width:100%">حدد دخلك الشهري</button>`);$('#shI').onclick=()=>{close();editSheet('inc')};return}
  open(`<h3>كيف حسبناها؟</h3><p class="mut" style="margin-top:-6px">لدورتك الحالية: ${cycleLabel(0)}</p><div class="glass tlist">
 ${row('رصيدك الحالي'+(k.hasSave?' (بدون حساب الادخار)':''),fmt(k.bal))}${k.pending?row('+ دخل متوقع باقي هذي الدورة',fmt(k.pending),'pos'):''}${row('= المتاح',fmt(k.available))}
 ${row('− التزامات قادمة في الدورة',fmt(k.commit),'neg')}${k.U.length?`<div class="mut" style="font-size:12.5px;padding:0 0 8px;line-height:1.9">${k.U.map(x=>`${x.kind=='sub'?'اشتراك':'قسط'} ${esc(x.name)}: ${fmt(x.amount)} · ${x.late?'متأخر':dayLabel(x.date)}`).join('<br>')}</div>`:''}
-${k.hasSave?'':row('− الادخار ('+sv()+'% من الدخل)',fmt(k.saveT),'neg')}${row('= القابل للإنفاق',fmt(k.spendable),k.over?'neg':'')}
+${k.saveT?row('− الادخار ('+sv()+'% من الدخل)',fmt(k.saveT),'neg'):''}${row('= القابل للإنفاق',fmt(k.spendable),k.over?'neg':'')}
 ${row('÷ الأيام المتبقية',k.left+' يوم')}${row('= المتاح للصرف اليوم',fmt(k.perDay),'pos')}</div>
-<p class="mut" style="font-size:12.5px;line-height:1.9;margin:12px 0 0">الافتراضات: نبدأ من رصيدك الفعلي في حساباتك (مع اللي باقي من الدورة اللي قبل)، ونضيف الراتب لو ما نزل بعد. حساب الادخار ما ينحسب ضمن المتاح للصرف. الرقم تقديري ويتحدث مع كل عملية تسجلها.${k.over?' صرفك تجاوز المتاح لهذي الدورة، فالمتاح اليوم صفر.':''}</p>`)}
+<p class="mut" style="font-size:12.5px;line-height:1.9;margin:12px 0 0">الافتراضات: نحسب من الفلوس اللي معك فعلًا الحين في حسابات الصرف، وما نضيف دخل ما وصل لأن راتب الدورة يكون داخل رصيدك من بدايتها. حساب الادخار ما ينحسب، والمتاح اليوم ما يطلع أبدًا أكثر من رصيدك. الرقم تقديري ويتحدث مع كل عملية تسجلها.${k.over?' صرفك تجاوز المتاح لهذي الدورة، فالمتاح اليوم صفر.':''}</p>`)}
 /* ===== financial status: transparent factors ===== */
 function healthCalc(){return at0(()=>{const k=safeCalc(),i=k.expectedInc,e=k.spent,proj=e/cD()*cL(),b=Object.fromEntries(byCat()),B=Object.entries(S.budgets),ov=B.filter(([c,l])=>(b[c]||0)>l),near=B.filter(([c,l])=>(b[c]||0)>=l*.8&&(b[c]||0)<=l),
  comM=subsM()+(S.installments||[]).filter(x=>x.paid<x.months).reduce((s,x)=>s+(+x.amount||0),0),late=(S.installments||[]).filter(x=>x.paid<x.months&&nextDue(x)<todayKey()),G=S.goals.filter(g=>g.c<g.t),F=[];
@@ -1742,7 +1742,7 @@ $('#pf').onclick=profile;$('#mic').onclick=voiceAdd;$('#home').onclick=()=>{tab=
 $('#bell').onclick=()=>bellUI();
 function bellUI(){const A=alerts();open('<h3>التنبيهات</h3>'+(A.length?A.map(a=>`<div class="glass card" style="margin:8px 0"><div class="row" style="margin:0">${alIcon(a[0])}<span class="grow">${a[1]}</span><button class="ib" data-dm="${esc(a[2])}" aria-label="تجاهل" style="width:32px;height:32px">✕</button></div></div>`).join(''):'<p class="mut">كل شيء تمام، ما فيه تنبيهات.</p>'));
 document.querySelectorAll('[data-dm]').forEach(b=>b.onclick=()=>{S.dismissed=S.dismissed||[];S.dismissed.push(b.dataset.dm);save();bellUI()})}
-function theme(t){const _e=t=='auto'?(matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light'):t;document.documentElement.dataset.theme=_e;const tm=document.querySelector('meta[name=theme-color]');if(tm)tm.content=_e=='dark'?'#000000':'#f2f2f7';try{localStorage.setItem('wf_t',t)}catch(e){logErr(e)}}
+function theme(t){const _e=t=='auto'?(matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light'):t;document.documentElement.dataset.theme=_e;const tm=document.querySelector('meta[name=theme-color]');if(tm)tm.content=(()=>{try{return(BG[(S.p&&S.p.bg)||0]||BG[0])[_e=='dark'?0:2]}catch(x){return _e=='dark'?'#0b0f0d':'#f6f4ee'}})();try{localStorage.setItem('wf_t',t)}catch(e){logErr(e)}}
 let t0='dark';try{t0=localStorage.getItem('wf_t')||'dark'}catch(e){logErr(e)}theme(t0);acc();
 document.addEventListener('pointermove',e=>{const g=e.target.closest&&e.target.closest('.glass');if(!g)return;const r=g.getBoundingClientRect();g.style.setProperty('--mx',(e.clientX-r.left)+'px');g.style.setProperty('--my',(e.clientY-r.top)+'px');if(g.classList.contains('big')&&e.pointerType=='mouse'&&!matchMedia('(prefers-reduced-motion:reduce)').matches)g.style.transform=`perspective(800px) rotateY(${(e.clientX-r.left)/r.width*6-3}deg) rotateX(${3-(e.clientY-r.top)/r.height*6}deg)`});
 document.addEventListener('pointerleave',()=>{document.querySelectorAll('.big').forEach(b=>b.style.transform='')},true);
