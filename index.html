@@ -379,6 +379,10 @@ details.more>summary::-webkit-details-marker{display:none}details.more[open]>sum
 .bar.bud i{transition:width .5s var(--ease),background .3s}
 .bar.b-ok i{background:var(--bud-ok)}.bar.b-warn i{background:var(--bud-warn)}.bar.b-near i{background:var(--bud-near)}.bar.b-over i{background:var(--bud-over);box-shadow:0 0 0 1px color-mix(in srgb,var(--bud-near) 35%,transparent)}
 .bt-ok{color:var(--muted)}.bt-warn{color:var(--bud-warn)}.bt-near{color:var(--bud-near)}.bt-over{color:var(--bud-near);font-weight:600}
+.avimg{width:100%;height:100%;border-radius:50%;object-fit:cover;display:block}
+#pf{overflow:hidden;padding:0}#pf .avimg{width:34px;height:34px}
+.av-big{overflow:hidden;cursor:pointer}.av-big svg{width:40px;height:40px;color:var(--mut)}
+.ic2 .avimg{width:28px;height:28px}
 </style>
 <style id="apple">
 /* ===== صُرة — Apple layer =====
@@ -821,15 +825,31 @@ $('#lt').innerHTML='<b>يوم '+d+'</b>: '+(a!=null?'إجمالي '+fmt(a):'تو
 const AV=['👤','👦','👧','🧒','👶','👨','👩','🧑','👴','👵','🧕','👳','😎','🦊','🐱','🐶','🐻','🐼','🐨','🐯','🦁','🐺','🐸','🐵','🦉','🐧','🦄','🐢','🐙','🦋','🌵','🌻','🍉','⚡','🔥','🌊','🌙','⭐','🎯','🎮','🎧','⚽','🏀','🚀','💎','🦅','😺','🤖'],BGN=['أخضر صنوبري','أسود عقيقي','عنّابي داكن','كحلي ليلي','أسود'],BG=[['#0b0f0d','#0f1512','#f6f4ee','#efede5'],['#0f0f10','#1b1b1d','#f5f5f2','#e8e8e3'],['#1b0f12','#2b171c','#f8f1ee','#efe1dc'],['#0b1220','#15203a','#f1f4f8','#e1e7ef'],['#000000','#000000','#f2f2f7','#f2f2f7']],hx=(v,d)=>/^#[0-9a-f]{6}$/i.test(v)?v:d,themePref=()=>{try{return localStorage.getItem('wf_t')||'dark'}catch(e){return'dark'}};
 function acc(){let z=document.getElementById('accs');if(!z){z=document.createElement('style');z.id='accs';document.head.appendChild(z)}const p=S.p||{},a=p.acc=='c'?[hx(p.c1,'#d6b26e'),hx(p.c2,'#5f9e80'),hx(p.c1,'#9a7432'),hx(p.c2,'#7a5a22')]:(ACC[p.acc||0]||ACC[0]),b=BG[p.bg||0]||BG[0];
 z.textContent=`:root[data-theme=dark]{--ac:${a[0]};--ac2:${a[1]};--bg1:${b[0]};--bg2:${b[1]};--surf:color-mix(in srgb,#fff 9%,${b[0]});--card:var(--surf);--sheet:var(--surf);--surf2:color-mix(in srgb,#fff 15%,${b[0]});--mat:color-mix(in srgb,color-mix(in srgb,#fff 9%,${b[0]}) 74%,transparent)}:root[data-theme=light]{--ac:${a[2]};--ac2:${a[3]};--bg1:${b[2]};--bg2:${b[3]}}`;
-document.body.style.zoom=[.92,1,1.1,1.2][p.fs==null?1:p.fs]||1;document.documentElement.classList.toggle('rm',!!p.rm);$('#pf').textContent=p.av||'👤'}
+document.body.style.zoom=[.92,1,1.1,1.2][p.fs==null?1:p.fs]||1;document.documentElement.classList.toggle('rm',!!p.rm);$('#pf').innerHTML=avHTML()}
+/* profile picture: a photo (small WebP kept inside your data, so it syncs) or an emoji avatar — you choose */
+function usePhoto(){const p=S.p||{};return p.avm=='photo'&&/^data:image\//.test(p.photo||'')}
+function avHTML(){const p=S.p||{};return usePhoto()?`<img class="avimg" src="${p.photo}" alt="">`:esc(p.av||'👤')}
+async function photoFrom(file){const u=URL.createObjectURL(file);try{const im=await new Promise((ok,no)=>{const i=new Image();i.onload=()=>ok(i);i.onerror=no;i.src=u});
+ const n=320,c=document.createElement('canvas');c.width=c.height=n;const x=c.getContext('2d'),m=Math.min(im.naturalWidth,im.naturalHeight);
+ x.drawImage(im,(im.naturalWidth-m)/2,(im.naturalHeight-m)/2,m,m,0,0,n,n);let d=c.toDataURL('image/webp',.82);if(!d.startsWith('data:image/webp'))d=c.toDataURL('image/jpeg',.85);return d}finally{URL.revokeObjectURL(u)}}
+function avUI(){const p=S.p||{},ph=/^data:image\//.test(p.photo||''),mode=usePhoto()?'photo':'av';
+ open(`<h3>الصورة الشخصية</h3><div class="tabs" style="margin:0 0 16px"><button class="chip ${mode=='photo'?'on':''}" data-avt="photo">صورة</button><button class="chip ${mode=='av'?'on':''}" data-avt="av">أفاتار</button></div>
+<div id="avP" ${mode=='photo'?'':'hidden'}><div class="av-big" style="width:120px;height:120px;font-size:48px">${ph?`<img class="avimg" src="${p.photo}" alt="">`:IC.cam}</div><input type="file" id="avF" accept="image/*" hidden><button class="btn" id="avPick" style="width:100%">${ph?'غيّر الصورة':'اختر صورة'}</button>${ph?`<div class="row" style="gap:8px;margin-top:8px">${mode=='photo'?'':'<button class="btn s" id="avUse" style="flex:1">استخدم هذي الصورة</button>'}<button class="btn d" id="avDel" style="flex:1">احذف الصورة</button></div>`:''}<p class="mut" style="font-size:13px;margin:12px 0 0;text-align:center">نقصّها دائرية ونصغّرها، وتظهر في كل أجهزتك.</p></div>
+<div id="avA" ${mode=='av'?'':'hidden'}><p class="mut" style="margin-top:0">اختر أفاتارًا يمثلك</p><div class="chips" style="justify-content:center">${AV.map(a=>`<button class="chip ${mode=='av'&&p.av==a?'on':''}" data-pav="${a}" style="font-size:22px;padding:10px 16px">${a}</button>`).join('')}</div></div>`);
+ document.querySelectorAll('[data-avt]').forEach(b=>b.onclick=()=>{document.querySelectorAll('[data-avt]').forEach(x=>x.classList.toggle('on',x==b));$('#avP').hidden=b.dataset.avt!='photo';$('#avA').hidden=b.dataset.avt!='av'});
+ document.querySelectorAll('[data-pav]').forEach(b=>b.onclick=()=>{setP({av:b.dataset.pav,avm:'av'});close();rp()});
+ $('#avPick').onclick=()=>$('#avF').click();
+ $('#avF').onchange=async e=>{const f=e.target.files&&e.target.files[0];if(!f)return;try{const d=await photoFrom(f);if(d.length>120000){toast('الصورة كبيرة، جرّب صورة ثانية');return}setP({photo:d,avm:'photo'});toast('✓ تم تحديث صورتك');close();rp()}catch(x){logErr(x);toast('ما قدرنا نقرأ الصورة، جرّب صورة ثانية')}};
+ const u=$('#avUse');if(u)u.onclick=()=>{setP({avm:'photo'});close();rp()};
+ const d=$('#avDel');if(d)d.onclick=()=>{setP({photo:'',avm:'av'});toast('تم حذف الصورة');close();rp()}}
 function profile(){if(!(S.p&&S.p.since)){let ms;try{ms=now.toLocaleDateString('ar-SA-u-ca-gregory-nu-latn',{month:'long',year:'numeric'})}catch(e){ms=String(now.getFullYear())}setP({since:ms})}tab='prof';render();scrollTo({top:0})}
 function rp(){acc();$('#view').innerHTML=V.prof();bindProf()}
 V.prof=()=>{const ICM={'👤':IC.user,'💰':IC.coin,'📅':IC.cal,'💵':IC.cash,'🎯':IC.target,'⚖️':IC.rule,'🖼️':IC.image,'🔤':IC.type,'🙈':IC.eye,'📄':IC.doc,'📑':IC.doc,'📥':IC.inc,'🧪':IC.flask,'🚫':IC.trash,'🗑️':IC.trash2,'📁':IC.folder,'☁️':IC.cloud,'✉️':IC.user,'📱':IC.phone,'🔄':IC.sync,'🚪':IC.logout,'🎨':IC.palette,'☀️':IC.sun,'🌙':IC.moon,'🔒':IC.lock,'⚡':IC.spark,'➕':IC.plus},p=S.p||{},A=p.av||'👤',md=themePref(),since=p.since||'2026',
 sec=(t,h)=>`<div class="sec-t stg">${String(t).replace(/^\S+\s/,'')}</div><div class="glass card plist stg">${h}</div>`,
 row=(ic,l,s2,val,extra)=>`<div class="prow" ${extra||''} role="button" tabindex="0"><span class="ic2">${ICM[ic]||ic}</span><div class="lb"><b>${l}</b>${s2?`<small>${s2}</small>`:''}</div>${val?`<span class="vv">${val}</span>`:''}<span class="chv">‹</span></div>`,
 sw=(id,on,ic,l,s2)=>`<div class="prow" data-sw="${id}" role="switch" aria-checked="${!!on}" tabindex="0"><span class="ic2">${ICM[ic]||ic}</span><div class="lb"><b>${l}</b>${s2?`<small>${s2}</small>`:''}</div><div class="sw ${on?'on':''}"><i></i></div></div>`;
-return`<div class="glass hero-p"><div class="av-big">${esc(A)}</div><b style="font-size:20px">${esc(p.name||'بدون اسم')}</b><div class="mut" style="margin-top:2px">عضو منذ ${esc(since)}</div><button class="btn s" id="ped" style="margin-top:14px;padding:9px 20px">تعديل الملف</button></div>
-${sec('👤 حسابي',row('👤','الاسم','',esc(p.name||'—'),'data-e="name"')+(p.phone?row('📱','رقم الجوال','مرتبط بحسابك','<span dir="ltr">'+esc(p.phone)+'</span>','data-e="phone"'):'')+row(esc(A),'الصورة الشخصية','اختر أفاتارًا','','data-e="av"')+acctRows(row))}
+return`<div class="glass hero-p"><div class="av-big" data-e="av" role="button" aria-label="الصورة الشخصية">${avHTML()}</div><b style="font-size:20px">${esc(p.name||'بدون اسم')}</b><div class="mut" style="margin-top:2px">عضو منذ ${esc(since)}</div><button class="btn s" id="ped" style="margin-top:14px;padding:9px 20px">تعديل الملف</button></div>
+${sec('👤 حسابي',row('👤','الاسم','',esc(p.name||'—'),'data-e="name"')+(p.phone?row('📱','رقم الجوال','مرتبط بحسابك','<span dir="ltr">'+esc(p.phone)+'</span>','data-e="phone"'):'')+row(usePhoto()?avHTML():esc(A),'الصورة الشخصية',usePhoto()?'صورتك':'أفاتار · تقدر تحط صورة','','data-e="av"')+acctRows(row))}
 ${sec('🏦 الحسابات',accts(true).map(a=>row('💰',esc(a.name),[a.bank||(ACCT[a.type]||ACCT.other)[0],a.last4?'ينتهي بـ '+a.last4:'أضف آخر 4 أرقام',a.hidden?'مخفي':''].filter(Boolean).join(' · '),fmt(accBal(a.id)),'data-acc="'+a.id+'"')).join('')+row('➕','إضافة حساب','حساب بنكي، بطاقة، محفظة','','data-e="accnew"')+row('🔄','تحويل بين حساباتي','ما ينحسب دخل ولا مصروف','','data-e="move"'))}
 <div class="sec-t stg">منتجاتي</div><div class="apwrap stg">${prodButtons()}</div>
 ${sec('💰 الإعدادات المالية',row('💰','العملة','',esc(cur()),'data-e="cur"')+row('📅','بداية الشهر المالي','يوم '+payDay()+' من كل شهر ميلادي','','data-e="pd"')+row('💵','الدخل الشهري *','يُضاف تلقائيًا كل راتب',p.inc>0?fmt(+p.inc):'مطلوب — اضغط للتحديد','data-e="inc"')+row('🎯','نسبة الادخار المستهدفة','من دخلك',sv()+'%','data-e="sv"')+row('⚖️','قاعدة الميزانية','الأساسيات/الرغبات/الادخار',ruleP().join('/'),'data-e="rule"'))}
@@ -851,7 +871,7 @@ function encPhrase(){return ENC[Math.floor(Math.random()*ENC.length)]}
 function boomSm(el){if(matchMedia('(prefers-reduced-motion:reduce)').matches)return;el.animate([{transform:'scale(1)'},{transform:'scale(1.35)'},{transform:'scale(1.12)'}],{duration:380,easing:'cubic-bezier(.3,1.6,.4,1)'})}
 function editSheet(k){const p=S.p||{};
 if(k=='name'){form('تعديل الاسم',[{k:'v',l:'الاسم',v:p.name||''}],v=>{setP({name:v.v.slice(0,30)});toast('✓ تم الحفظ');rp()});return}
-if(k=='av'){open(`<h3>${esc(p.av||'👤')} الصورة الشخصية</h3><p class="mut">اختر أفاتارًا يمثلك</p><div class="chips" style="justify-content:center">${AV.map(a=>`<button class="chip" data-pav="${a}" style="font-size:22px;padding:10px 16px">${a}</button>`).join('')}</div>`);document.querySelectorAll('[data-pav]').forEach(b=>b.onclick=()=>{setP({av:b.dataset.pav});close();rp()});return}
+if(k=='av'){avUI();return}
 if(k=='cur'){form('العملة',[{k:'v',l:'اختر العملة',o:['ر.س','د.إ','ر.ق','د.ك','ر.ع','د.ب','$','€'].map(c=>[c,c])}],v=>{setP({cur:v.v});toast('✓ تم الحفظ');rp()});return}
 if(k=='pd'){form('بداية الشهر المالي',[{k:'v',l:'يوم البداية من كل شهر ميلادي',o:[...Array(28)].map((_,i)=>[i+1,'يوم '+(i+1)])}],v=>{setP({pd:+v.v});toast('✓ تم الحفظ، تبدأ إنجازاتك من جديد مع هذا اليوم');rp()});return}
 if(k=='inc'){open(`<h3>💵 الدخل الشهري</h3><p class="mut">مبلغ إلزامي، يُضاف تلقائيًا لدخلك مع كل راتب.</p><input id="fi" type="number" inputmode="decimal" placeholder="5000" value="${p.inc||''}"><div id="fie" class="neg" style="display:none;margin:-4px 0 10px;font-size:13px">فضلًا أدخل مبلغًا أكبر من صفر.</div><button class="btn" id="fis" style="width:100%">حفظ</button>`);
@@ -871,7 +891,7 @@ if(k=='accnew'){accEdit();return}
 if(k=='move'){moveUI();return}
 if(k=='phone'){toast('رقم الجوال مرتبط بحسابك ولا يتغير');return}
 if(k=='logout'){logoutUI();return}
-if(k=='sync'){(async()=>{toast('جاري المزامنة…');try{const r=await cloudPull();if(r=='same')await cloudPush();toast(r=='pulled'?'✓ تم تحديث بياناتك من حسابك':'✓ بياناتك محفوظة في حسابك');render()}catch(e){toast(e.message||'تعذرت المزامنة')}})();return}
+if(k=='sync'){(async()=>{toast('جاري المزامنة…');try{const r=await cloudPull();if(r=='same')await cloudPush();toast(r=='pulled'?'✓ تم تحديث بياناتك من حسابك':r=='merged'?'✓ تم دمج بياناتك من أجهزتك':'✓ بياناتك محفوظة في حسابك');render()}catch(e){toast(e.message||'تعذرت المزامنة')}})();return}
 if(k=='docs'){docsUI();return}
 if(k=='trash'){trashUI();return}
 if(k=='wipe'){conf('🗑️ مسح البيانات نهائي','بيانات مصاريفك وأهدافك واشتراكاتك بتُحذف من هذا الجهاز ولا ترجع. الإعدادات (الاسم، الألوان، العملة) تبقى كما هي. متأكد؟',()=>{const pp=S.p;S={demo:0,nid:1,tx:[],budgets:{},goals:[],subs:[],p:pp};save();toast('تم مسح بياناتك');rp()},'نعم، امسحها','لا، تراجع');return}
@@ -1345,23 +1365,75 @@ async function sbFetch(path,o={},auth){const h=Object.assign({'apikey':SB.key,'c
 function sbStore(j){if(!j||!j.access_token)return false;SBS={access_token:j.access_token,refresh_token:j.refresh_token,expires_at:Date.now()+((+j.expires_in||3600)*1000),user:{id:j.user&&j.user.id,email:j.user&&j.user.email,name:j.user&&j.user.user_metadata&&j.user.user_metadata.name||'',phone:j.user&&j.user.user_metadata&&j.user.user_metadata.phone||''}};sbSave();return true}
 async function sbFresh(){if(!SBS||Date.now()<SBS.expires_at-60000)return;try{const j=await fetch(SB.url+'/auth/v1/token?grant_type=refresh_token',{method:'POST',headers:{'apikey':SB.key,'content-type':'application/json'},body:JSON.stringify({refresh_token:SBS.refresh_token})}).then(r=>r.ok?r.json():null);if(!sbStore(j)){SBS=null;sbSave()}}catch(e){logErr(e)}}
 async function sbReachable(){if(SBok!=null)return SBok;try{const c=new AbortController(),tm=setTimeout(()=>c.abort(),7000);const r=await fetch(SB.url+'/auth/v1/health',{headers:{apikey:SB.key},signal:c.signal});clearTimeout(tm);SBok=r.status<500}catch(e){SBok=false}return SBok}
-function cloudPayload(){const d=Object.assign({},S);delete d.docs;return d}
+function cloudPayload(){const d=Object.assign({},S);delete d.docs;delete d._bh;return JSON.parse(JSON.stringify(d))}
 let SBwarn=false;
-async function cloudPush(){if(!SBS)return;if(SBbusy){cloudQueue();return}SBbusy=true;const m0=S._mod;try{await sbFetch('/rest/v1/user_data',{method:'POST',headers:{Prefer:'resolution=merge-duplicates,return=minimal'},body:JSON.stringify({user_id:SBS.user.id,data:cloudPayload(),updated_at:new Date().toISOString()})},true);S._pushed=m0;try{localStorage.setItem(K,JSON.stringify(S))}catch(e){logErr(e)}SBlast=new Date().toISOString()}catch(e){if(e.code!='network'&&!SBwarn){SBwarn=true;toast('تعذرت المزامنة: '+e.message)}throw e}finally{SBbusy=false}}
-function cloudQueue(){if(!SBS)return;clearTimeout(SBt);SBt=setTimeout(()=>cloudPush().catch(logErr),1500)}
-async function cloudPull(opts={}){if(!SBS)return'none';const rows=await sbFetch('/rest/v1/user_data?select=data,updated_at&user_id=eq.'+encodeURIComponent(SBS.user.id),{method:'GET'},true);const row=rows&&rows[0];
- if(!row||!row.data){if(!opts.noPush)await cloudPush();return'pushed'}
- const R=row.data,rm=+R._mod||0,lm=+S._mod||0,unpushed=lm>(+S._pushed||0);
- if(opts.preferRemote||rm>lm||(S.demo&&!R.demo)||(!unpushed&&rm!==lm)){const docs=S.docs;S=R;S.docs=docs||[];S._pushed=S._mod=rm;S.installments=S.installments||[];try{localStorage.setItem(K,JSON.stringify(S))}catch(e){logErr(e)}SBlast=row.updated_at;return'pulled'}
- if(lm>rm){await cloudPush();return'pushed'}return'same'}
+/* ===== sync v2 =====
+   Old rule compared device clocks ("whoever saved last wins"), so a laptop holding week-old data that
+   auto-saved anything on open looked "newer" and could overwrite the phone. Now every device remembers
+   which cloud version its data is based on (_base). Before writing it checks the cloud is still on that
+   version; if another device changed it meanwhile, it pulls and merges instead of overwriting.
+   Transactions get a stable id (u) so the same item is recognised on every device. */
+function sigOf(t){return[t.type,+t.amount||0,t.date||'',t.category||'',t.note||'',t.acc||'',t.from||'',t.to||'',t.apId||''].join('|')}
+function hs(x){let h=2166136261;for(let i=0;i<x.length;i++)h=Math.imul(h^x.charCodeAt(i),16777619);return(h>>>0).toString(36)}
+function ensureUids(D){const seen={};(D.tx||[]).forEach(t=>{if(t.u)return;const g=sigOf(t),n=seen[g]=(seen[g]||0)+1;t.u='s'+hs(g)+'.'+n});
+ (D.trash||[]).forEach(x=>{if(x&&x.kind=='tx'&&x.data&&!x.data.u)x.data.u='s'+hs(sigOf(x.data))+'.d'})}
+function newestTx(D){return(D.tx||[]).reduce((m,t)=>t.date>m?t.date:m,'')}
+function pickPrimary(R,L){const a=newestTx(R),b=newestTx(L);if(a!=b)return a>b?'R':'L';return(R.tx||[]).length>=(L.tx||[]).length?'R':'L'}
+/* P = the side whose settings win; O = the other side, whose extra transactions and deletions are folded in */
+function mergeData(P,O){P=JSON.parse(JSON.stringify(P));ensureUids(P);ensureUids(O);P.tx=P.tx||[];P.trash=P.trash||[];
+ const uid=new Set(P.tx.map(t=>t.u)),sig=new Set(P.tx.map(sigOf)),gone=new Set();
+ P.trash.forEach(x=>{if(x&&x.kind=='tx'&&x.data){gone.add(x.data.u);gone.add(sigOf(x.data))}});
+ let nid=Math.max(+P.nid||0,+O.nid||0,...P.tx.map(t=>+t.id||0),...P.trash.map(x=>+x.id||0))+1,added=0,removed=0;
+ (O.tx||[]).forEach(t=>{if(uid.has(t.u)||sig.has(sigOf(t))||gone.has(t.u)||gone.has(sigOf(t)))return;P.tx.push(Object.assign({},t,{id:nid++}));uid.add(t.u);sig.add(sigOf(t));added++});
+ const pt=new Set(P.trash.map(x=>x&&x.kind=='tx'&&x.data?x.data.u:null));
+ (O.trash||[]).forEach(x=>{if(!x||x.kind!='tx'||!x.data||pt.has(x.data.u))return;const i=P.tx.findIndex(t=>t.u==x.data.u);if(i>=0){P.tx.splice(i,1);removed++}P.trash.push(Object.assign({},x,{id:nid++}))});
+ P.apUnread=[...(P.apUnread||[]),...(O.apUnread||[]).filter(m=>!(P.apUnread||[]).some(n=>JSON.stringify(n)==JSON.stringify(m)))];
+ P.nid=nid;P._merged={added,removed};return P}
+/* settings (profile, budgets, goals, accounts…) win per key: if this device changed a key since the last sync it keeps
+   its version, otherwise the cloud's. _bh holds a fingerprint of every key as it was at the last sync. */
+const SYNC_SKIP=new Set(['tx','trash','nid','docs','_mod','_pushed','_base','_bh','_merged','apUnread']);
+function keyHashes(D){const h={};Object.keys(D).forEach(k=>{if(SYNC_SKIP.has(k))return;if(k=='p'&&D.p&&typeof D.p=='object')Object.keys(D.p).forEach(j=>h['p.'+j]=hs(JSON.stringify(D.p[j])));else h[k]=hs(JSON.stringify(D[k]))});return h}
+function keepLocalKeys(N,L,bh){if(!bh)return N;const lh=keyHashes(L);Object.keys(lh).forEach(k=>{if(bh[k]===lh[k])return;if(k.startsWith('p.')){N.p=N.p||{};N.p[k.slice(2)]=L.p[k.slice(2)]}else N[k]=L[k]});
+ Object.keys(bh).forEach(k=>{if(k in lh)return;if(k.startsWith('p.')){if(N.p)delete N.p[k.slice(2)]}else delete N[k]});return N}
+let SYNCQ=Promise.resolve();
+function syncLock(fn){const p=SYNCQ.then(fn,fn);SYNCQ=p.catch(()=>{});return p}
+async function remoteVer(){const rows=await sbFetch('/rest/v1/user_data?select=m:data->>_mod&user_id=eq.'+encodeURIComponent(SBS.user.id),{method:'GET'},true);return rows&&rows[0]?(+rows[0].m||0):null}
+function keepLocal(){try{localStorage.setItem(K,JSON.stringify(S))}catch(e){logErr(e)}}
+async function _push(checked){if(!SBS)return'none';SBbusy=true;try{
+ if(!checked){const v=await remoteVer();if(v!=null&&v!==(+S._base||0))return await _pull({})}
+ ensureUids(S);const m0=+S._mod||Date.now();S._mod=m0;const body=cloudPayload();
+ await sbFetch('/rest/v1/user_data',{method:'POST',headers:{Prefer:'resolution=merge-duplicates,return=minimal'},body:JSON.stringify({user_id:SBS.user.id,data:body,updated_at:new Date().toISOString()})},true);
+ S._base=m0;S._bh=keyHashes(body);if(+S._mod===m0)S._pushed=m0;keepLocal();SBlast=new Date().toISOString();return'pushed'}
+ catch(e){if(e.code!='network'&&!SBwarn){SBwarn=true;toast('تعذرت المزامنة: '+e.message)}throw e}finally{SBbusy=false}}
+async function _pull(opts){if(!SBS)return'none';const rows=await sbFetch('/rest/v1/user_data?select=data,updated_at&user_id=eq.'+encodeURIComponent(SBS.user.id),{method:'GET'},true);const row=rows&&rows[0];
+ if(!row||!row.data){if(opts.noPush)return'none';return await _push(true)}
+ const R=row.data,rm=+R._mod||0,base=+S._base||0,unpushed=+S._mod>(+S._pushed||0)||!base;
+ if(base&&rm===base){if(+S._mod>(+S._pushed||0))return await _push(true);return'same'}
+ let N,merged=false;
+ if(opts.preferRemote||(S.demo&&!R.demo)||!unpushed)N=R;
+ else if(R.demo&&!S.demo)return await _push(true);
+ else{N=base&&S._bh?keepLocalKeys(mergeData(R,S),S,S._bh):pickPrimary(R,S)=='R'?mergeData(R,S):mergeData(S,R);merged=true}
+ const docs=S.docs;S=N;S.docs=docs||[];S.installments=S.installments||[];S.goals=S.goals||[];S.subs=S.subs||[];S.budgets=S.budgets||{};
+ const info=S._merged;delete S._merged;S._base=rm;S._pushed=rm;S._bh=keyHashes(merged?R:S);S._mod=merged?Date.now():rm;keepLocal();SBlast=row.updated_at;
+ if(merged){await _push(true);SYNCINFO=info;return'merged'}return'pulled'}
+let SYNCINFO=null;
+function cloudPush(){return syncLock(()=>_push(false))}
+function cloudPull(opts={}){return syncLock(()=>_pull(opts))}
+function cloudQueue(){if(!SBS)return;clearTimeout(SBt);SBt=setTimeout(()=>cloudPush().then(r=>{if(r=='pulled'||r=='merged')syncDone(r)}).catch(logErr),1500)}
+function syncDone(r){render();acc();if(r=='merged'&&SYNCINFO&&SYNCINFO.added)toast('✓ تم دمج بياناتك من أجهزتك');else toast('✓ تم تحديث بياناتك من حسابك');SYNCINFO=null}
+/* keep every open device fresh: check the cloud version (a tiny request) on focus and every 30s */
+let SYNCchk=0;
+async function syncCheck(){if(!SBS||SBbusy||document.visibilityState!='visible'||Date.now()-SYNCchk<4000)return;SYNCchk=Date.now();
+ try{const v=await remoteVer();if(v==null||v===(+S._base||0)){if(+S._mod>(+S._pushed||0))cloudQueue();return}
+ const r=await cloudPull();if(r=='pulled'||r=='merged')syncDone(r)}catch(e){logErr(e)}}
+setInterval(syncCheck,30000);addEventListener('focus',syncCheck);addEventListener('online',syncCheck);
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState=='hidden')micKill()});
 addEventListener('pagehide',micKill);
-/* sync when the user comes back to the app (works for logins made during the session too) */
-addEventListener('visibilitychange',()=>{if(document.visibilityState=='visible'&&SBS)setTimeout(()=>apSync(),800);if(document.visibilityState=='visible'&&SBS&&!SBbusy&&!(+S._mod>(+S._pushed||0)))cloudPull().then(r=>{if(r=='pulled'){render();toast('✓ تم تحديث بياناتك من حسابك')}}).catch(logErr);else if(document.visibilityState=='hidden'&&SBS&&+S._mod>(+S._pushed||0))cloudPush().catch(logErr)});
+addEventListener('visibilitychange',()=>{if(document.visibilityState=='visible'&&SBS){setTimeout(()=>apSync(),800);syncCheck()}else if(document.visibilityState=='hidden'&&SBS&&+S._mod>(+S._pushed||0))cloudPush().catch(logErr)});
 async function cloudBoot(){
  const h=location.hash||'';if(/access_token=/.test(h)){const q=new URLSearchParams(h.slice(1));const typ=q.get('type');try{const u=await fetch(SB.url+'/auth/v1/user',{headers:{apikey:SB.key,Authorization:'Bearer '+q.get('access_token')}}).then(r=>r.ok?r.json():null);if(u&&sbStore({access_token:q.get('access_token'),refresh_token:q.get('refresh_token'),expires_in:q.get('expires_in'),user:u})){history.replaceState(null,'',location.pathname+location.search);const md=u.user_metadata||{};setP({guest:false,name:(S.p&&S.p.name)||md.name||'',phone:(S.p&&S.p.phone)||(md.phone?fmtPhone(String(md.phone).replace('+','')):'')});if(typ=='recovery'){setTimeout(newPassUI,900)}else toast('✓ تم تأكيد حسابك وتسجيل الدخول')}}catch(e){logErr(e)}}
  else if(/error_description=/.test(h)){const q=new URLSearchParams(h.slice(1));history.replaceState(null,'',location.pathname+location.search);setTimeout(()=>toast('رابط التأكيد منتهي أو غير صالح. سجّل دخول أو اطلب رابط جديد.'),900)}
- if(!SBS)return;try{const r=await cloudPull();if(r=='pulled')render()}catch(e){logErr(e)}
+ if(!SBS)return;try{const r=await cloudPull();if(r=='pulled'||r=='merged')render()}catch(e){logErr(e)}
  apSync();
  }
 /* ===== welcome & phone accounts (phone + password on Supabase Auth) ===== */
