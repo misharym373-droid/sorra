@@ -1389,16 +1389,24 @@ function pickPrimary(R,L){const a=newestTx(R),b=newestTx(L);if(a!=b)return a>b?'
 /* P = the side whose settings win; O = the other side, whose extra transactions and deletions are folded in */
 function mergeData(P,O){P=JSON.parse(JSON.stringify(P));ensureUids(P);ensureUids(O);P.tx=P.tx||[];P.trash=P.trash||[];
  const uid=new Set(P.tx.map(t=>t.u)),sig=new Set(P.tx.map(sigOf)),gone=new Set();
- P.trash.forEach(x=>{if(x&&x.kind=='tx'&&x.data){gone.add(x.data.u);gone.add(sigOf(x.data))}});
+ P.trash.forEach(x=>{if(x&&x.kind=='tx'&&x.data){gone.add(x.data.u);gone.add(sigOf(x.data))}});const drop=[...new Set([...(P._drop||[]),...(O._drop||[])])];drop.forEach(u=>gone.add(u));if(drop.length)P._drop=drop;P.tx=P.tx.filter(t=>!drop.includes(t.u));
  let nid=Math.max(+P.nid||0,+O.nid||0,...P.tx.map(t=>+t.id||0),...P.trash.map(x=>+x.id||0))+1,added=0,removed=0;
  (O.tx||[]).forEach(t=>{if(uid.has(t.u)||sig.has(sigOf(t))||gone.has(t.u)||gone.has(sigOf(t)))return;P.tx.push(Object.assign({},t,{id:nid++}));uid.add(t.u);sig.add(sigOf(t));added++});
  const pt=new Set(P.trash.map(x=>x&&x.kind=='tx'&&x.data?x.data.u:null));
- (O.trash||[]).forEach(x=>{if(!x||x.kind!='tx'||!x.data||pt.has(x.data.u))return;const i=P.tx.findIndex(t=>t.u==x.data.u);if(i>=0){P.tx.splice(i,1);removed++}P.trash.push(Object.assign({},x,{id:nid++}))});
+ (O.trash||[]).forEach(x=>{if(!x||x.kind!='tx'||!x.data||pt.has(x.data.u)||drop.includes(x.data.u))return;const i=P.tx.findIndex(t=>t.u==x.data.u);if(i>=0){P.tx.splice(i,1);removed++}P.trash.push(Object.assign({},x,{id:nid++}))});
  P.apUnread=[...(P.apUnread||[]),...(O.apUnread||[]).filter(m=>!(P.apUnread||[]).some(n=>JSON.stringify(n)==JSON.stringify(m)))];
  P.nid=nid;P._merged={added,removed};return P}
 /* settings (profile, budgets, goals, accounts…) win per key: if this device changed a key since the last sync it keeps
    its version, otherwise the cloud's. _bh holds a fingerprint of every key as it was at the last sync. */
-const SYNC_SKIP=new Set(['tx','trash','nid','docs','_mod','_pushed','_base','_bh','_merged','apUnread']);
+const SYNC_SKIP=new Set(['tx','trash','nid','docs','_mod','_pushed','_base','_bh','_merged','apUnread','_drop','_uid']);
+/* every device's data is stamped with the account it belongs to (_uid). Signing into a different account on the
+   same device never merges: this device's data is set aside under its own account and the other account's data loads. */
+function blankState(){const pp=S&&S.p;const B=demo();B.tx=[];B.goals=[];B.subs=[];B.budgets={};B.installments=[];B.trash=[];B.demo=false;B._mod=0;
+ B.p=pp?{av:pp.av,acc:pp.acc,bg:pp.bg,fs:pp.fs,cur:pp.cur,guest:false}:{guest:false};delete B._base;delete B._pushed;delete B._bh;return B}
+function sameOwner(L,R){const lt=L.tx||[],rt=R.tx||[];if(!lt.length||!rt.length)return true;const rs=new Set(rt.map(sigOf));let n=0;lt.forEach(t=>{if(rs.has(sigOf(t)))n++});return n/Math.min(lt.length,rt.length)>=.3}
+function switchOwner(me){try{const old=S._uid||('unknown_'+Date.now());localStorage.setItem('wf_v1_u_'+old,JSON.stringify(S))}catch(e){logErr(e)}
+ let N=null;try{N=JSON.parse(localStorage.getItem('wf_v1_u_'+me)||'null')}catch(e){logErr(e)}
+ S=N&&Array.isArray(N.tx)?N:blankState();S._uid=me;keepLocal()}
 function keyHashes(D){const h={};Object.keys(D).forEach(k=>{if(SYNC_SKIP.has(k))return;if(k=='p'&&D.p&&typeof D.p=='object')Object.keys(D.p).forEach(j=>h['p.'+j]=hs(JSON.stringify(D.p[j])));else h[k]=hs(JSON.stringify(D[k]))});return h}
 function keepLocalKeys(N,L,bh){if(!bh)return N;const lh=keyHashes(L);Object.keys(lh).forEach(k=>{if(bh[k]===lh[k])return;if(k.startsWith('p.')){N.p=N.p||{};N.p[k.slice(2)]=L.p[k.slice(2)]}else N[k]=L[k]});
  Object.keys(bh).forEach(k=>{if(k in lh)return;if(k.startsWith('p.')){if(N.p)delete N.p[k.slice(2)]}else delete N[k]});return N}
@@ -1406,22 +1414,23 @@ let SYNCQ=Promise.resolve();
 function syncLock(fn){const p=SYNCQ.then(fn,fn);SYNCQ=p.catch(()=>{});return p}
 async function remoteVer(){const rows=await sbFetch('/rest/v1/user_data?select=m:data->>_mod&user_id=eq.'+encodeURIComponent(SBS.user.id),{method:'GET'},true);return rows&&rows[0]?(+rows[0].m||0):null}
 function keepLocal(){try{localStorage.setItem(K,JSON.stringify(S))}catch(e){logErr(e)}}
-async function _push(checked){if(!SBS)return'none';SBbusy=true;try{
+async function _push(checked){if(!SBS)return'none';if(S._uid&&S._uid!==SBS.user.id)return await _pull({});SBbusy=true;try{
  if(!checked){const v=await remoteVer();if(v!=null&&v!==(+S._base||0))return await _pull({})}
- ensureUids(S);const m0=+S._mod||Date.now();S._mod=m0;const body=cloudPayload();
+ ensureUids(S);S._uid=SBS.user.id;const m0=+S._mod||Date.now();S._mod=m0;const body=cloudPayload();
  await sbFetch('/rest/v1/user_data',{method:'POST',headers:{Prefer:'resolution=merge-duplicates,return=minimal'},body:JSON.stringify({user_id:SBS.user.id,data:body,updated_at:new Date().toISOString()})},true);
  S._base=m0;S._bh=keyHashes(body);if(+S._mod===m0)S._pushed=m0;keepLocal();SBlast=new Date().toISOString();return'pushed'}
  catch(e){if(e.code!='network'&&!SBwarn){SBwarn=true;toast('تعذرت المزامنة: '+e.message)}throw e}finally{SBbusy=false}}
 async function _pull(opts){if(!SBS)return'none';const rows=await sbFetch('/rest/v1/user_data?select=data,updated_at&user_id=eq.'+encodeURIComponent(SBS.user.id),{method:'GET'},true);const row=rows&&rows[0];
+ const me=SBS.user.id;if(S._uid&&S._uid!==me)switchOwner(me);else if(!S._uid&&!S.demo&&row&&row.data&&!sameOwner(S,row.data))switchOwner(me);
  if(!row||!row.data){if(opts.noPush)return'none';return await _push(true)}
- const R=row.data,rm=+R._mod||0,base=+S._base||0,unpushed=+S._mod>(+S._pushed||0)||!base;
+  const R=row.data,rm=+R._mod||0,base=+S._base||0,unpushed=+S._mod>(+S._pushed||0)||!base;
  if(base&&rm===base){if(+S._mod>(+S._pushed||0))return await _push(true);return'same'}
  let N,merged=false;
- if(opts.preferRemote||(S.demo&&!R.demo)||!unpushed)N=R;
+ if(opts.preferRemote||(S.demo&&!R.demo)||!unpushed||(!base&&!(S.tx||[]).length))N=R;
  else if(R.demo&&!S.demo)return await _push(true);
  else{N=base&&S._bh?keepLocalKeys(mergeData(R,S),S,S._bh):pickPrimary(R,S)=='R'?mergeData(R,S):mergeData(S,R);merged=true}
  const docs=S.docs;S=N;S.docs=docs||[];S.installments=S.installments||[];S.goals=S.goals||[];S.subs=S.subs||[];S.budgets=S.budgets||{};
- const info=S._merged;delete S._merged;S._base=rm;S._pushed=rm;S._bh=keyHashes(merged?R:S);S._mod=merged?Date.now():rm;keepLocal();SBlast=row.updated_at;
+ const info=S._merged;delete S._merged;S._uid=me;S._base=rm;S._pushed=rm;S._bh=keyHashes(merged?R:S);S._mod=merged?Date.now():rm;keepLocal();SBlast=row.updated_at;
  if(merged){await _push(true);SYNCINFO=info;return'merged'}return'pulled'}
 let SYNCINFO=null;
 function cloudPush(){return syncLock(()=>_push(false))}
